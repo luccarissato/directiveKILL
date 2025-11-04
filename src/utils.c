@@ -1,0 +1,1 @@
+// funções genéricas (colisão, aleatoriedade etc)

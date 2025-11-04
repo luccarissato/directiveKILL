@@ -1,0 +1,1 @@
+// gerenciamento de telas e estados (menu, jogo, game over etc)

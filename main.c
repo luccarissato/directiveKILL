@@ -1,3 +1,5 @@
+//loop principal do jogo
+
 #include "raylib.h"
 
 #define PLAYER_MAX_SHOTS 50
