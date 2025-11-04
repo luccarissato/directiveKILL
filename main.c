@@ -27,12 +27,13 @@ int main(void)
         BeginDrawing();
 
             ClearBackground(BLACK);
-        
             Player_DrawShots();
-            DrawCircleV(playerPosition, playerRadius, GREEN);
+            Draw_Player(&playerPosition);
 
         EndDrawing();
     }
+    
+    Player_Unload();
 
     CloseWindow();
     return 0;

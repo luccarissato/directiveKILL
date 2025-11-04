@@ -6,6 +6,11 @@
 
 void Player_Init(void);
 
+// Free any loaded resources for the player
+void Player_Unload(void);
+
+void Draw_Player(Vector2 *playerPosition);
+
 // Handle player movement and keep it inside bounds
 void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float playerSpeed, int screenWidth, int screenHeight);
 
