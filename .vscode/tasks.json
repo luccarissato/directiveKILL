@@ -14,7 +14,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "${workspaceFolder}\\build.bat",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}\\scripts\\build.ps1\"",
             "problemMatcher": [
                 "$gcc"
             ],
