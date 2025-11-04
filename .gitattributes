@@ -1,0 +1,42 @@
+# ================================
+# CONFIGURAÇÃO DE FINAIS DE LINHA
+# ================================
+
+# Detecta automaticamente arquivos de texto e normaliza finais de linha
+* text=auto
+
+# Assegura que arquivos de código C/C++ sempre usem LF (Linux-style)
+*.c text eol=lf
+*.h text eol=lf
+*.cpp text eol=lf
+*.hpp text eol=lf
+
+# Assegura que scripts shell (Linux) usem LF
+*.sh text eol=lf
+
+# Scripts e batchs do Windows usam CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# ================================
+# ARQUIVOS DO VSCODE
+# ================================
+
+# VSCode pode lidar bem com ambos, mas manter CRLF no Windows ajuda
+.vscode/*.json text eol=crlf
+
+# ================================
+# ARQUIVOS BINÁRIOS (não converter)
+# ================================
+
+# Evita que o Git tente alterar finais de linha nesses arquivos
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.bmp binary
+*.exe binary
+*.dll binary
+*.lib binary
+*.a binary
+*.o binary
+*.wa*

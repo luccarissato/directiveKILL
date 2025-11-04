@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "Win64",
+            "includePath": [
+                "${env:RAYLIB}\\raylib\\src",
+                "${env:W64DEVKIT}\\lib\\gcc\\x86_64-w64-mingw32\\**",
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_WINDOWS",
+                "_UNICODE"
+            ],
+            "compilerPath": "${env:W64DEVKIT}\\bin\\x86_64-w64-mingw32-gcc.exe",
+            "cStandard": "c11",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "windows-gcc-x64",
+            "browse": {
+                "path": [
+                    "${env:RAYLIB}\\raylib\\src",
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": "${workspaceFolder}\\.vscode\\browse.vc.db"
+            }
+        }
+    ],
+    "version": 4
+}
