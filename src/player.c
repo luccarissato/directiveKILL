@@ -23,6 +23,7 @@ static float burstTimer = 0.0f;
 static float reloadTimer = 0.0f;
 static int burstCount = 0;
 static bool isReloading = false;
+
 static Texture2D playerSprite;
 static float scale = 2.5f;
 
@@ -36,7 +37,7 @@ void Player_Init(void)
 	playerSprite = LoadTexture("assets/textures/player.png");
 }
 
-void Draw_Player(Vector2 *playerPosition) {
+void Player_Draw(Vector2 *playerPosition) {
 	Rectangle source = { 0, 0, (float)playerSprite.width, (float)playerSprite.height };
 	Rectangle dest = { playerPosition->x, playerPosition->y, (float)playerSprite.width*scale, (float)playerSprite.height*scale};
 	Vector2 origin = { (playerSprite.width*scale) / 2.0f, (playerSprite.height*scale) / 2.0f };

@@ -31,6 +31,9 @@
             "label": "run",
             "type": "shell",
             "command": "${workspaceFolder}\\main.exe",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
@@ -48,8 +51,8 @@
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe"
             ],
-            "options": {
-                "cwd": "C:\\w64devkit\\bin"
+                "options": {
+                    "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [
                 "$gcc"

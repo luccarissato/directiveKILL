@@ -6,21 +6,22 @@
 
 void Player_Init(void);
 
-// Free any loaded resources for the player
+// free nos sprites que nao vao ser utilizados
 void Player_Unload(void);
 
-void Draw_Player(Vector2 *playerPosition);
+// desenha o player na tela
+void Player_Draw(Vector2 *playerPosition);
 
-// Handle player movement and keep it inside bounds
+// movimentação do player dentro da tela
 void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float playerSpeed, int screenWidth, int screenHeight);
 
-// Process shooting input and burst/reload logic (call before updating shots)
+// lógica de tiro e intervalo entre rajadas
 void Player_HandleShooting(float delta, Vector2 playerPosition);
 
-// Update active shots positions/lifetimes (call every frame)
+// atualiza posição e o tempo de vida dos tiros
 void Player_UpdateShots(float delta);
 
-// Draw active shots (call between BeginDrawing/EndDrawing)
+// desenha os tiros na tela
 void Player_DrawShots(void);
 
 #endif // PLAYER_H
