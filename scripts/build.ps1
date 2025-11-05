@@ -76,11 +76,12 @@ if ($w64root) {
 $main = Join-Path $projectRoot 'main.c'
 $player = Join-Path $projectRoot 'src\\player.c'
 $enemy = Join-Path $projectRoot 'src\\enemy.c'
+$projectile = Join-Path $projectRoot 'src\\projectile.c'
 $out = Join-Path $projectRoot 'main.exe'
 $include = Join-Path $projectRoot 'include'
 
 # Build args
-$args = @($main, $player, $enemy, '-o', $out, '-I', (Join-Path $ray 'raylib\\src'), '-I', $include, '-L', (Join-Path $ray 'raylib\\src'), '-lraylib', '-lopengl32', '-lgdi32', '-lwinmm', '-static-libgcc', '-static-libstdc++')
+$args = @($main, $player, $enemy, $projectile, '-o', $out, '-I', (Join-Path $ray 'raylib\\src'), '-I', $include, '-L', (Join-Path $ray 'raylib\\src'), '-lraylib', '-lopengl32', '-lgdi32', '-lwinmm', '-static-libgcc', '-static-libstdc++')
 
 Write-Host "Compiling: $($args -join ' ')"
 

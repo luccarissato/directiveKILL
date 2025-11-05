@@ -2,9 +2,10 @@
 #define ENEMY_H
 
 #include "raylib.h"
+#include <stdbool.h>
 
-// inicializa os inimigos
-void Enemies_Init(void);
+// inicializa os inimigos; pass a Y coordinate where enemies should stop (from top)
+void Enemies_Init(float stopY);
 
 // atualiza a posição dos inimigos
 void Enemies_Update(void);
@@ -12,5 +13,7 @@ void Enemies_Update(void);
 // desenha os inimigos na tela
 void Enemies_Draw(Texture2D enemySprite);
 
+// obtém a posição do primeiro inimigo ativo, retorna true se for bem-sucedido
+bool Enemies_GetFirstActivePosition(Vector2 *outPos, int *outIndex);
 
 #endif // ENEMY_H

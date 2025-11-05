@@ -18,22 +18,24 @@ typedef struct Shoot {
 	float radius;
 } Shoot;
 
-static Shoot shoot[PLAYER_MAX_SHOTS];
+static Shoot shoot[PLAYER_MAX_SHOTS] = { 0};
 static float burstTimer = 0.0f;
 static float reloadTimer = 0.0f;
 static int burstCount = 0;
 static bool isReloading = false;
+static int health = 3;
 
 static Texture2D playerSprite;
 static float scale = 2.5f;
 
 void Player_Init(void)
 {
-	memset(shoot, 0, sizeof(shoot));
+	shoot[PLAYER_MAX_SHOTS] = (Shoot){ 0 };
 	burstTimer = 0.0f;
 	reloadTimer = 0.0f;
 	burstCount = 0;
 	isReloading = false;
+	health = 3;
 	playerSprite = LoadTexture("assets/textures/player.png");
 }
 

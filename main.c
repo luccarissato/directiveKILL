@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include "include/player.h"
 #include "include/enemy.h"
+#include "include/projectile.h"
 
 int main(void)
 {   
@@ -11,9 +12,12 @@ int main(void)
 
     InitWindow(screenWidth, screenHeight, "Directive: KILL");
 
-    // so pra testar o carregamento de texturas
-    Texture2D enemySprite = LoadTexture("assets/textures/scout.png");
-    Enemies_Init();
+    Texture2D enemySprite = LoadTexture("assets/textures/broken_ship.png");
+    float enemiesStopY = 120.0f;
+    Enemies_Init(enemiesStopY);
+
+
+    Projectiles_Init(200);
 
     Vector2 playerPosition = { (float)screenWidth / 2, (float)screenHeight / 2 };
     float playerRadius = 20.0f;
@@ -24,6 +28,18 @@ int main(void)
     while (!WindowShouldClose())    
     {
         float delta = GetFrameTime();
+
+        static float shootTimer = 0.0f;
+        const float shootInterval = 0.5f;
+        shootTimer += delta;
+        if (shootTimer >= shootInterval) {
+            shootTimer = 0.0f;
+            Vector2 enemyPos;
+            int enemyIndex;
+            if (Enemies_GetFirstActivePosition(&enemyPos, &enemyIndex)) {
+                Projectiles_Type(0, enemyPos);
+            }
+        }
 
         Player_HandleMovement(&playerPosition, playerRadius, playerSpeed, screenWidth, screenHeight);
         Player_HandleShooting(delta, playerPosition);
@@ -38,11 +54,16 @@ int main(void)
             Enemies_Update();
             Enemies_Draw(enemySprite);
 
+            Projectiles_Update(delta);
+            Projectiles_Draw();
+
         EndDrawing();
     }
 
     Player_Unload();
     UnloadTexture(enemySprite);
+
+    Projectiles_Free();
 
     CloseWindow();
     return 0;
