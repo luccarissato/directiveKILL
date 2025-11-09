@@ -11,6 +11,7 @@ typedef struct Enemy {
 	Color color;
 	Vector2 position;
 	int lifeSpawn;
+    int hp; // hit points; when <= 0 enemy dies
     float radius;
     float targetY; // onde os inimigos devem parar na tela
     bool stopped;
@@ -31,6 +32,7 @@ void Enemies_Init(float stopY) {
         enemies[i].radius = 20.0f;
         enemies[i].active = true;
         enemies[i].stopped = false;
+        enemies[i].hp = 3; // cada inimigo precisa de 3 tiros para morrer
         // variação no limite Y para parar os inimigos
         float jitter = (float)GetRandomValue(-30, 30);
         enemies[i].targetY = stopY + jitter;
@@ -62,6 +64,25 @@ void Enemies_Update(void) {
             enemies[i].speed.y = 0.0f;
         }
     }
+}
+
+bool Enemies_CheckHit(Vector2 pos, float radius) {
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (!enemies[i].active) continue;
+
+        float dx = enemies[i].position.x - pos.x;
+        float dy = enemies[i].position.y - pos.y;
+        float dist2 = dx*dx + dy*dy;
+        float minDist = enemies[i].radius + radius;
+        if (dist2 <= minDist * minDist) {
+            enemies[i].hp -= 1;
+            if (enemies[i].hp <= 0) {
+                enemies[i].active = false;
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 void Enemies_Draw(Texture2D enemySprite) {

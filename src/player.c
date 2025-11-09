@@ -3,6 +3,7 @@
 #include "../include/player.h"
 #include "raylib.h"
 #include <string.h>
+#include "../include/enemy.h"
 
 #define PLAYER_MAX_SHOTS 50
 #define BURST_SIZE 3
@@ -49,6 +50,16 @@ void Player_Draw(Vector2 *playerPosition) {
 void Player_Unload(void)
 {
 	UnloadTexture(playerSprite);
+}
+
+void Player_TakeDamage(int amount) {
+	if (amount <= 0) return;
+	health -= amount;
+	if (health < 0) health = 0;
+}
+
+int Player_GetHealth(void) {
+	return health;
 }
 
 void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float playerSpeed, int screenWidth, int screenHeight)
@@ -121,6 +132,11 @@ void Player_UpdateShots(float delta)
 		if (shoot[i].active) {
 			shoot[i].position.y += shoot[i].speed.y * delta;
 			shoot[i].lifeSpawn--;
+
+			if (Enemies_CheckHit(shoot[i].position, shoot[i].radius)) {
+				shoot[i].active = false;
+				continue;
+			}
 
 			if (shoot[i].lifeSpawn <= 0 || shoot[i].position.y < 0) {
 				shoot[i].active = false;

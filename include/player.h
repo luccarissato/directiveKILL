@@ -24,4 +24,8 @@ void Player_UpdateShots(float delta);
 // desenha os tiros na tela
 void Player_DrawShots(void);
 
+// reduz a vida do player
+void Player_TakeDamage(int amount);
+int Player_GetHealth(void);
+
 #endif // PLAYER_H

@@ -56,6 +56,19 @@ int main(void)
 
             Projectiles_Update(delta);
             Projectiles_Draw();
+        
+                int hits = Projectiles_CheckPlayerCollision(playerPosition, playerRadius);
+                if (hits > 0) {
+                    Player_TakeDamage(hits);
+                }
+
+                // só para testes, mostra vidas restantes
+                int lives = Player_GetHealth();
+                DrawText(TextFormat("Lives: %d", lives), 10, 10, 20, RAYWHITE);
+
+                if (lives <= 0) {
+                    break;
+                }
 
         EndDrawing();
     }

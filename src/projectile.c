@@ -84,3 +84,22 @@ void Projectiles_Draw(void)
     }
 }
 
+int Projectiles_CheckPlayerCollision(Vector2 playerPos, float playerRadius) {
+    if (!g_pool) return 0;
+    int hits = 0;
+    for (int i = 0; i < g_poolSize; i++) {
+        Projectile *p = &g_pool[i];
+        if (!p->active) continue;
+
+        float dx = p->position.x - playerPos.x;
+        float dy = p->position.y - playerPos.y;
+        float dist2 = dx*dx + dy*dy;
+        float minDist = p->radius + playerRadius;
+        if (dist2 <= minDist * minDist) {
+            p->active = false;
+            hits++;
+        }
+    }
+    return hits;
+}
+

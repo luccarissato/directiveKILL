@@ -31,4 +31,7 @@ void Projectiles_Draw(void);
 // free na pool de projeteis
 void Projectiles_Free(void);
 
+// checa colisão dos tiros inimigos com o player
+int Projectiles_CheckPlayerCollision(Vector2 playerPos, float playerRadius);
+
 #endif // PROJECTILE_H
