@@ -2,8 +2,9 @@
 #include "../include/enemy.h"
 #include "raylib.h"
 #include <math.h>
+#include "../include/projectile.h"
 
-#define MAX_ENEMIES 1
+#define MAX_ENEMIES 10
 
 typedef struct Enemy {
     Vector2 speed;
@@ -11,7 +12,7 @@ typedef struct Enemy {
 	Color color;
 	Vector2 position;
 	int lifeSpawn;
-    int hp; // hit points; when <= 0 enemy dies
+    int hp;
     float radius;
     float targetY; // onde os inimigos devem parar na tela
     bool stopped;
@@ -20,23 +21,45 @@ typedef struct Enemy {
 
 Enemy enemies[MAX_ENEMIES] = { 0 };
 static float scale = 2.5f;
+static int g_currentWave = 1;
+static int g_enemiesThisWave = 1;
+static float g_waveTimer = 0.0f;
+static const float g_waveTimeout = 30.0f;
+static float g_stopY = 120.0f;
+
+static void SpawnWave(int count) {
+    if (count > MAX_ENEMIES) count = MAX_ENEMIES;
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (i < count) {
+            // aparecem um pouco acima na tela (antes de entrar em visão)
+            int spawnX = GetRandomValue(0, GetScreenWidth());
+            int spawnY = -GetRandomValue(16, 48);
+            enemies[i].position = (Vector2){ (float)spawnX, (float)spawnY };
+            // velocidade vertical 
+            enemies[i].speed = (Vector2){ 0, (float)GetRandomValue(30, 80) / 60.0f }; // aprox o.5 - 1.3 por frame
+            enemies[i].radius = 20.0f;
+            enemies[i].active = true;
+            enemies[i].stopped = false;
+            enemies[i].hp = 3;
+            // variação no limite y para parar os inimigos
+            float jitter = (float)GetRandomValue(-30, 30);
+            enemies[i].targetY = g_stopY + jitter;
+        } else {
+            // desativa os inimigos não utilizados
+            enemies[i].active = false;
+            enemies[i].stopped = false;
+            enemies[i].hp = 0;
+        }
+    }
+}
 
 void Enemies_Init(float stopY) {
-    for (int i = 0; i < MAX_ENEMIES; i++) {
-        // aparecem um pouco acima na tela (antes de entrar em visão)
-        int spawnX = GetRandomValue(0, GetScreenWidth());
-        int spawnY = -GetRandomValue(16, 48);
-        enemies[i].position = (Vector2){ (float)spawnX, (float)spawnY };
-        // velocidade vertical
-        enemies[i].speed = (Vector2){ 0, (float)GetRandomValue(30, 80) / 60.0f }; // aprox 0.5 - 1.3 por frame
-        enemies[i].radius = 20.0f;
-        enemies[i].active = true;
-        enemies[i].stopped = false;
-        enemies[i].hp = 3; // cada inimigo precisa de 3 tiros para morrer
-        // variação no limite Y para parar os inimigos
-        float jitter = (float)GetRandomValue(-30, 30);
-        enemies[i].targetY = stopY + jitter;
-    }
+    g_stopY = stopY;
+    g_currentWave = 1;
+    g_enemiesThisWave = 1;
+    g_waveTimer = 0.0f;
+
+    SpawnWave(g_enemiesThisWave);
 }
 
 void Enemies_Update(void) {
@@ -63,6 +86,22 @@ void Enemies_Update(void) {
             enemies[i].stopped = true;
             enemies[i].speed.y = 0.0f;
         }
+    }
+
+    int activeCount = 0;
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (enemies[i].active) activeCount++;
+    }
+
+    g_waveTimer += dt;
+
+    if (activeCount == 0 || g_waveTimer >= g_waveTimeout) {
+        g_currentWave++;
+        int desired = 2 * g_currentWave - 1;
+        if (desired > 9) desired = 9;
+        g_enemiesThisWave = desired;
+        SpawnWave(g_enemiesThisWave);
+        g_waveTimer = 0.0f;
     }
 }
 
@@ -105,4 +144,11 @@ bool Enemies_GetFirstActivePosition(Vector2 *outPos, int *outIndex) {
         return true;
     }
     return false;
+}
+
+void Enemies_ShootAll(void) {
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (!enemies[i].active) continue;
+        Projectiles_Type(enemies[i].type, enemies[i].position);
+    }
 }
