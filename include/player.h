@@ -28,4 +28,7 @@ void Player_DrawShots(void);
 void Player_TakeDamage(int amount);
 int Player_GetHealth(void);
 
+// reseta o estado interno do player (tiros, timers, vida) sem recarregar sprites
+void Player_Reset(void);
+
 #endif // PLAYER_H

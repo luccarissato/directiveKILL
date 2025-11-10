@@ -31,13 +31,39 @@ static float scale = 2.5f;
 
 void Player_Init(void)
 {
-	shoot[PLAYER_MAX_SHOTS] = (Shoot){ 0 };
+	// inicializa array de tiros
+	for (int i = 0; i < PLAYER_MAX_SHOTS; i++) {
+		shoot[i].active = false;
+		shoot[i].position = (Vector2){0,0};
+		shoot[i].speed = (Vector2){0,0};
+		shoot[i].color = RAYWHITE;
+		shoot[i].lifeSpawn = 0;
+		shoot[i].radius = 0.0f;
+	}
 	burstTimer = 0.0f;
 	reloadTimer = 0.0f;
 	burstCount = 0;
 	isReloading = false;
 	health = 3;
 	playerSprite = LoadTexture("assets/textures/player.png");
+}
+
+// reseta estado do jogador sem recarregar sprite
+void Player_Reset(void)
+{
+	for (int i = 0; i < PLAYER_MAX_SHOTS; i++) {
+		shoot[i].active = false;
+		shoot[i].position = (Vector2){0,0};
+		shoot[i].speed = (Vector2){0,0};
+		shoot[i].lifeSpawn = 0;
+		shoot[i].radius = 0.0f;
+		shoot[i].color = RAYWHITE;
+	}
+	burstTimer = 0.0f;
+	reloadTimer = 0.0f;
+	burstCount = 0;
+	isReloading = false;
+	health = 3;
 }
 
 void Player_Draw(Vector2 *playerPosition) {
