@@ -3,7 +3,7 @@
 
 #include "raylib.h"
 
-
+// inicializa o jogador
 void Player_Init(void);
 
 // free nos sprites que nao vao ser utilizados
@@ -26,6 +26,8 @@ void Player_DrawShots(void);
 
 // reduz a vida do player
 void Player_TakeDamage(int amount);
+
+// temporário mostra a vida do player
 int Player_GetHealth(void);
 
 // reseta o estado interno do player (tiros, timers, vida) sem recarregar sprites

@@ -19,6 +19,9 @@ bool Enemies_GetFirstActivePosition(Vector2 *outPos, int *outIndex);
 // todos os inimigos atiram com o seu respectivo padrão
 void Enemies_ShootAll(void);
 
+// temporário só pra mostrar qual wave é
+int Enemies_GetCurrentWave(void);
+
 // checa se o inimigo foi atingido e o desaparece casoe ele morra
 bool Enemies_CheckHit(Vector2 pos, float radius);
 

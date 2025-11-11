@@ -53,6 +53,10 @@ static void SpawnWave(int count) {
     }
 }
 
+int Enemies_GetCurrentWave(void) {
+    return g_currentWave;
+}
+
 void Enemies_Init(float stopY) {
     g_stopY = stopY;
     g_currentWave = 1;

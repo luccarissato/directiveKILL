@@ -88,6 +88,9 @@ int main(void)
             int lives = Player_GetHealth();
             Gui_Draw(GUI_STATE_GAME, lives);
 
+            int currentWave = Enemies_GetCurrentWave();
+            DrawText(TextFormat("Wave: %d", currentWave), 10, 34, 18, RAYWHITE);
+
             if (lives <= 0) {
                 guiState = GUI_STATE_GAMEOVER;
             }
