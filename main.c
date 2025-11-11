@@ -64,11 +64,7 @@ int main(void)
             shootTimer += delta;
             if (shootTimer >= shootInterval) {
                 shootTimer = 0.0f;
-                Vector2 enemyPos;
-                int enemyIndex;
-                if (Enemies_GetFirstActivePosition(&enemyPos, &enemyIndex)) {
-                    Projectiles_Type(0, enemyPos);
-                }
+                Enemies_ShootAll();
             }
 
             Player_HandleMovement(&playerPosition, playerRadius, playerSpeed, screenWidth, screenHeight);
