@@ -4,6 +4,7 @@
 #include "include/player.h"
 #include "include/enemy.h"
 #include "include/projectile.h"
+#include "include/gui.h"
 
 int main(void)
 {   
@@ -24,27 +25,56 @@ int main(void)
     float playerSpeed = 0.14f;
 
     Player_Init(); 
+    GUI_Init();
+    GuiState guiState = GUI_STATE_MENU;
 
-    while (!WindowShouldClose())    
+    bool shouldExit = false;
+    while (!WindowShouldClose() && !shouldExit)    
     {
-        float delta = GetFrameTime();
+    float delta = GetFrameTime();
+        GuiState prevGuiState = guiState;
 
-        static float shootTimer = 0.0f;
-        const float shootInterval = 0.5f;
-        shootTimer += delta;
-        if (shootTimer >= shootInterval) {
-            shootTimer = 0.0f;
-            // make every active enemy shoot
-            Enemies_ShootAll();
-        }
+    BeginDrawing();
+    ClearBackground(BLACK);
 
-        Player_HandleMovement(&playerPosition, playerRadius, playerSpeed, screenWidth, screenHeight);
-        Player_HandleShooting(delta, playerPosition);
-        Player_UpdateShots(delta);
+    switch (guiState)
+    {
+        case GUI_STATE_MENU:
+            Gui_Draw(GUI_STATE_MENU, 0);
+            guiState = Gui_Update(guiState);
 
-        BeginDrawing();
+            if (guiState == GUI_STATE_EXIT) {
+                shouldExit = true;
+                break; 
+            }
 
-            ClearBackground(BLACK);
+            if (prevGuiState == GUI_STATE_MENU && guiState == GUI_STATE_GAME) {
+                playerPosition = (Vector2){ (float)screenWidth / 2, (float)screenHeight / 2 };
+                Player_Reset();
+                Enemies_Init(enemiesStopY);
+                Projectiles_Free();
+                Projectiles_Init(200);
+            }
+            break;
+
+        case GUI_STATE_GAME:
+        {
+            static float shootTimer = 0.0f;
+            const float shootInterval = 0.5f;
+            shootTimer += delta;
+            if (shootTimer >= shootInterval) {
+                shootTimer = 0.0f;
+                Vector2 enemyPos;
+                int enemyIndex;
+                if (Enemies_GetFirstActivePosition(&enemyPos, &enemyIndex)) {
+                    Projectiles_Type(0, enemyPos);
+                }
+            }
+
+            Player_HandleMovement(&playerPosition, playerRadius, playerSpeed, screenWidth, screenHeight);
+            Player_HandleShooting(delta, playerPosition);
+            Player_UpdateShots(delta);
+
             Player_DrawShots();
             Player_Draw(&playerPosition);
             
@@ -54,27 +84,33 @@ int main(void)
             Projectiles_Update(delta);
             Projectiles_Draw();
         
-                int hits = Projectiles_CheckPlayerCollision(playerPosition, playerRadius);
-                if (hits > 0) {
-                    Player_TakeDamage(hits);
-                }
+            int hits = Projectiles_CheckPlayerCollision(playerPosition, playerRadius);
+            if (hits > 0) {
+                Player_TakeDamage(hits);
+            }
 
-                // só para testes, mostra vidas restantes
-                int lives = Player_GetHealth();
-                DrawText(TextFormat("Lives: %d", lives), 10, 10, 20, RAYWHITE);
+            int lives = Player_GetHealth();
+            Gui_Draw(GUI_STATE_GAME, lives);
 
-                if (lives <= 0) {
-                    break;
-                }
+            if (lives <= 0) {
+                guiState = GUI_STATE_GAMEOVER;
+            }
+            break;
+        }
 
-        EndDrawing();
+        case GUI_STATE_GAMEOVER:
+            Gui_Draw(GUI_STATE_GAMEOVER, 0);
+            guiState = Gui_Update(guiState);
+            break;
     }
 
-    Player_Unload();
-    UnloadTexture(enemySprite);
+    EndDrawing();
+}
 
-    Projectiles_Free();
-
-    CloseWindow();
-    return 0;
+Gui_Unload();
+Player_Unload();
+UnloadTexture(enemySprite);
+Projectiles_Free();
+CloseWindow();
+return 0;
 }
