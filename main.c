@@ -42,17 +42,15 @@ int main(void)
         case GUI_STATE_MENU:
             Gui_Draw(GUI_STATE_MENU, 0);
             guiState = Gui_Update(guiState);
-            // se usuário escolheu sair no menu, sinaliza saída
+
             if (guiState == GUI_STATE_EXIT) {
                 shouldExit = true;
-                break; // sai do switch e do loop na condição externa
+                break; 
             }
-            // se iniciou novo jogo a partir do menu, reinicia estado
+
             if (prevGuiState == GUI_STATE_MENU && guiState == GUI_STATE_GAME) {
-                // reinicia posição e estado do jogador
                 playerPosition = (Vector2){ (float)screenWidth / 2, (float)screenHeight / 2 };
                 Player_Reset();
-                // reinicia inimigos e projéteis
                 Enemies_Init(enemiesStopY);
                 Projectiles_Free();
                 Projectiles_Init(200);
