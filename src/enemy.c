@@ -26,6 +26,7 @@ static int g_enemiesThisWave = 1;
 static float g_waveTimer = 0.0f;
 static const float g_waveTimeout = 30.0f;
 static float g_stopY = 120.0f;
+static bool g_infinite = false;
 
 static void SpawnWave(int count) {
     if (count > MAX_ENEMIES) count = MAX_ENEMIES;
@@ -62,6 +63,7 @@ void Enemies_Init(float stopY) {
     g_currentWave = 1;
     g_enemiesThisWave = 1;
     g_waveTimer = 0.0f;
+    g_infinite = false;
 
     SpawnWave(g_enemiesThisWave);
 }
@@ -100,10 +102,31 @@ void Enemies_Update(void) {
     g_waveTimer += dt;
 
     if (activeCount == 0 || g_waveTimer >= g_waveTimeout) {
-        g_currentWave++;
-        int desired = 2 * g_currentWave - 1;
-        if (desired > 9) desired = 9;
-        g_enemiesThisWave = desired;
+        int nextDesired = 1;
+        if (!g_infinite) {
+            int nextWave = g_currentWave + 1;
+            int candidate = 2 * nextWave - 1;
+            if (candidate > 9) {
+                // se a ultima wave foi a ultima, passa para o modo infinito
+                if (g_enemiesThisWave == 9) {
+                    g_infinite = true;
+                    nextDesired = GetRandomValue(1, 9);
+                    g_currentWave = nextWave;
+                } else {
+                    // cap to 9 for this next wave
+                    nextDesired = 9;
+                    g_currentWave = nextWave;
+                }
+            } else {
+                nextDesired = candidate;
+                g_currentWave = nextWave;
+            }
+        } else {
+            g_currentWave++;
+            nextDesired = GetRandomValue(1, 9);
+        }
+
+        g_enemiesThisWave = nextDesired;
         SpawnWave(g_enemiesThisWave);
         g_waveTimer = 0.0f;
     }
