@@ -7,29 +7,30 @@
 #include "include/gui.h"
 
 int main(void)
-{   
-    const int screenWidth = 800;
-    const int screenHeight = 450;
+{
+    const int screenWidth = 640;
+    const int screenHeight = 360;
 
     InitWindow(screenWidth, screenHeight, "Directive: KILL");
 
     Texture2D enemySprite = LoadTexture("assets/textures/broken_ship.png");
-    float enemiesStopY = 120.0f;
+    float enemiesStopY = (float)screenHeight * 0.25f; // Ajustado para 25% (mais acima)
     Enemies_Init(enemiesStopY);
 
 
     Projectiles_Init(200);
 
-    Vector2 playerPosition = { (float)screenWidth / 2, (float)screenHeight / 2 };
+    // Posição do jogador: X no centro, Y no limite da borda inferior (95% da altura)
+    Vector2 playerPosition = { (float)screenWidth / 2, (float)screenHeight * 0.95f }; 
     float playerRadius = 20.0f;
     float playerSpeed = 0.14f;
 
-    Player_Init(); 
+    Player_Init();
     GUI_Init();
     GuiState guiState = GUI_STATE_MENU;
 
     bool shouldExit = false;
-    while (!WindowShouldClose() && !shouldExit)    
+    while (!WindowShouldClose() && !shouldExit)
     {
     float delta = GetFrameTime();
         GuiState prevGuiState = guiState;
@@ -45,11 +46,12 @@ int main(void)
 
             if (guiState == GUI_STATE_EXIT) {
                 shouldExit = true;
-                break; 
+                break;
             }
 
             if (prevGuiState == GUI_STATE_MENU && guiState == GUI_STATE_GAME) {
-                playerPosition = (Vector2){ (float)screenWidth / 2, (float)screenHeight / 2 };
+                // Recalcula a posição inicial do jogador em um novo jogo
+                playerPosition = (Vector2){ ((float)screenWidth / 2, (float)screenHeight * 0.95f)+16 };
                 Player_Reset();
                 Enemies_Init(enemiesStopY);
                 Projectiles_Free();

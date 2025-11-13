@@ -5,16 +5,25 @@
 
 #include "raylib.h"
 
+//Imagens do Menu
+static Texture2D menuBackground;
+static Texture2D menuChoice1;
+static Texture2D menuChoice2;
+static Texture2D menuChoice3;
+static Texture2D health;
 static int menuSelection = 0; // índice da opção selecionada
 
 // Posições do menu
-static const int titleX = 280;
-static const int titleY = 100;
 static const int optionX = 360;
 static const int optionStartY = 210;
 static const int optionSpacing = 60; // espaçamento vertical entre opções
 
 void GUI_Init(void) {
+    menuBackground= LoadTexture("assets\\textures\\menu_background.png");
+    menuChoice1= LoadTexture("assets\\textures\\menus_letters1.png");
+    menuChoice2= LoadTexture("assets\\textures\\menus_letters2.png");
+    menuChoice3= LoadTexture("assets\\textures\\menus_letters3.png");
+    health= LoadTexture("assets\textures\\Crystal_heath.png");
     menuSelection = 0;
 }
 
@@ -26,7 +35,7 @@ static int clampSelection(int sel, int count) {
 }
 
 GuiState Gui_Update(GuiState currentState) {
-    // Navegação com W/S/A/D ou setas; confirmar com Enter/Space
+    // Navegação com W/S ou setas; confirmar com Enter/Espaço
     if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) {
         // sobe
         if (currentState == GUI_STATE_MENU) menuSelection = clampSelection(menuSelection - 1, 3);
@@ -60,16 +69,33 @@ GuiState Gui_Update(GuiState currentState) {
 void Gui_Draw(GuiState state, int playerLives) {
     switch (state) {
         case GUI_STATE_MENU: {
-            DrawText("DIRECTIVE: KILL", titleX, titleY, 30, RAYWHITE);
+            int screenWidth=GetScreenWidth();
+            int screenHeight=GetScreenHeight();
 
-            // duas opções: Start (índice 0) e Quit (índice 1)
-            Color startCol = (menuSelection == 0) ? YELLOW : RAYWHITE;
-            Color optionsCol=(menuSelection == 1)? YELLOW : RAYWHITE;
-            Color quitCol  = (menuSelection == 2) ? YELLOW : RAYWHITE;
+            DrawTexturePro(menuBackground, 
+                           (Rectangle){ 0.0f, 0.0f, (float)menuBackground.width, (float)menuBackground.height }, // Fonte: Toda a textura
+                           (Rectangle){ 0.0f, 0.0f, (float)screenWidth, (float)screenHeight },                   // Destino: Toda a tela
+                           (Vector2){ 0.0f, 0.0f }, 0.0f, RAYWHITE);
 
-            DrawText("Start", optionX, optionStartY, 20, startCol);
-            DrawText("Options", optionX, optionStartY + optionSpacing, 20, optionsCol);
-            DrawText("Quit",  optionX, optionStartY + optionSpacing * 2, 20, quitCol);
+            // tres opções: Start (índice 0), Options (índice 1) e Quit (índice 2)
+            if (menuSelection == 0) {
+                DrawTexturePro(menuChoice1,
+                               (Rectangle){ 0.0f, 0.0f, (float)menuChoice1.width, (float)menuChoice1.height },
+                               (Rectangle){ 0.0f, 0.0f, (float)screenWidth, (float)screenHeight },
+                               (Vector2){ 0.0f, 0.0f }, 0.0f, RAYWHITE);
+            }
+            else if (menuSelection == 1){
+                DrawTexturePro(menuChoice2,
+                               (Rectangle){ 0.0f, 0.0f, (float)menuChoice2.width, (float)menuChoice2.height },
+                               (Rectangle){ 0.0f, 0.0f, (float)screenWidth, (float)screenHeight },
+                               (Vector2){ 0.0f, 0.0f }, 0.0f, RAYWHITE);
+            }
+            else if(menuSelection == 2){
+                DrawTexturePro(menuChoice3,
+                               (Rectangle){ 0.0f, 0.0f, (float)menuChoice3.width, (float)menuChoice3.height },
+                               (Rectangle){ 0.0f, 0.0f, (float)screenWidth, (float)screenHeight },
+                               (Vector2){ 0.0f, 0.0f }, 0.0f, RAYWHITE);
+            }
             break;
         }
 
@@ -107,4 +133,10 @@ void Gui_Draw(GuiState state, int playerLives) {
     }
 }
 
-void Gui_Unload(void) { }
+void Gui_Unload(void) {
+    UnloadTexture(menuBackground);
+    UnloadTexture(menuChoice1);
+    UnloadTexture(menuChoice2);
+    UnloadTexture(menuChoice3);
+    UnloadTexture(health);
+ }
