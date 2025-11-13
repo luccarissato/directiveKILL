@@ -27,21 +27,22 @@ static int clampSelection(int sel, int count) {
 
 GuiState Gui_Update(GuiState currentState) {
     // Navegação com W/S/A/D ou setas; confirmar com Enter/Space
-    if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_A)) {
+    if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) {
         // sobe
-        if (currentState == GUI_STATE_MENU) menuSelection = clampSelection(menuSelection - 1, 2);
+        if (currentState == GUI_STATE_MENU) menuSelection = clampSelection(menuSelection - 1, 3);
         else if (currentState == GUI_STATE_PAUSE) menuSelection = clampSelection(menuSelection - 1, 1);
     }
-    if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_D)) {
+    if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN)) {
         // desce
-        if (currentState == GUI_STATE_MENU) menuSelection = clampSelection(menuSelection + 1, 2);
+        if (currentState == GUI_STATE_MENU) menuSelection = clampSelection(menuSelection + 1, 3);
         else if (currentState == GUI_STATE_PAUSE) menuSelection = clampSelection(menuSelection + 1, 1);
     }
 
     if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
         if (currentState == GUI_STATE_MENU) {
-            if (menuSelection == 0) return GUI_STATE_GAME;      // Iniciar
-            if (menuSelection == 1) return GUI_STATE_EXIT;     // Sair (fecha o jogo)
+            if (menuSelection == 0) return GUI_STATE_GAME; // Iniciar
+            if (menuSelection == 1) return GUI_STATE_GAME; // Temporario
+            if (menuSelection == 2) return GUI_STATE_EXIT; // Sair (fecha o jogo)
         }
         else if (currentState == GUI_STATE_PAUSE) {
             // única opção: voltar
@@ -63,10 +64,12 @@ void Gui_Draw(GuiState state, int playerLives) {
 
             // duas opções: Start (índice 0) e Quit (índice 1)
             Color startCol = (menuSelection == 0) ? YELLOW : RAYWHITE;
-            Color quitCol  = (menuSelection == 1) ? YELLOW : RAYWHITE;
+            Color optionsCol=(menuSelection == 1)? YELLOW : RAYWHITE;
+            Color quitCol  = (menuSelection == 2) ? YELLOW : RAYWHITE;
 
             DrawText("Start", optionX, optionStartY, 20, startCol);
-            DrawText("Quit",  optionX, optionStartY + optionSpacing, 20, quitCol);
+            DrawText("Options", optionX, optionStartY + optionSpacing, 20, optionsCol);
+            DrawText("Quit",  optionX, optionStartY + optionSpacing * 2, 20, quitCol);
             break;
         }
 
