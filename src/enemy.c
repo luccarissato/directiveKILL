@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include <math.h>
 #include "../include/projectile.h"
+#include "../include/game.h"
 
 #define MAX_ENEMIES 10
 
@@ -144,6 +145,7 @@ bool Enemies_CheckHit(Vector2 pos, float radius) {
             enemies[i].hp -= 1;
             if (enemies[i].hp <= 0) {
                 enemies[i].active = false;
+                Game_AddScore(100);
             }
             return true;
         }

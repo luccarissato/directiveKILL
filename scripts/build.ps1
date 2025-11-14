@@ -77,6 +77,7 @@ $main = Join-Path $projectRoot 'main.c'
 $player = Join-Path $projectRoot 'src\\player.c'
 $enemy = Join-Path $projectRoot 'src\\enemy.c'
 $projectile = Join-Path $projectRoot 'src\\projectile.c'
+$game = Join-Path $projectRoot 'src\\game.c'
 $out = Join-Path $projectRoot 'main.exe'
 $include = Join-Path $projectRoot 'include'
 $gui = Join-Path $projectRoot 'src\\gui.c'
@@ -84,7 +85,8 @@ $gui = Join-Path $projectRoot 'src\\gui.c'
 # Build args
 $args = @($main, $player, $enemy, $projectile, '-o', $out, '-I', (Join-Path $ray 'raylib\\src'), '-I', $include, '-L', (Join-Path $ray 'raylib\\src'), '-lraylib', '-lopengl32', '-lgdi32', '-lwinmm', '-static-libgcc', '-static-libstdc++')
 # assemble sources and add gui.c if present
-$sources = @($main, $player, $enemy, $projectile)
+ $sources = @($main, $player, $enemy, $projectile)
+if (Test-Path $game) { $sources += $game }
 if (Test-Path $gui) { $sources += $gui }
 
 $args = $sources + @('-o', $out, '-I', (Join-Path $ray 'raylib\\src'), '-I', $include, '-L', (Join-Path $ray 'raylib\\src'), '-lraylib', '-lopengl32', '-lgdi32', '-lwinmm', '-static-libgcc', '-static-libstdc++')

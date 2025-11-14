@@ -5,6 +5,8 @@
 #include "include/enemy.h"
 #include "include/projectile.h"
 #include "include/gui.h"
+#include "include/game.h"
+#include <ctype.h>
 
 int main(void)
 {   
@@ -34,6 +36,7 @@ int main(void)
     float delta = GetFrameTime();
         GuiState prevGuiState = guiState;
 
+
     BeginDrawing();
     ClearBackground(BLACK);
 
@@ -54,6 +57,7 @@ int main(void)
                 Enemies_Init(enemiesStopY);
                 Projectiles_Free();
                 Projectiles_Init(200);
+                Game_Init();
             }
             break;
 
@@ -71,6 +75,8 @@ int main(void)
             Player_HandleShooting(delta, playerPosition);
             Player_UpdateShots(delta);
 
+            Game_Update(delta);
+
             Player_DrawShots();
             Player_Draw(&playerPosition);
             
@@ -83,6 +89,7 @@ int main(void)
             int hits = Projectiles_CheckPlayerCollision(playerPosition, playerRadius);
             if (hits > 0) {
                 Player_TakeDamage(hits);
+                Game_AddScore(-10 * hits);
             }
 
             int lives = Player_GetHealth();
@@ -91,11 +98,50 @@ int main(void)
             int currentWave = Enemies_GetCurrentWave();
             DrawText(TextFormat("Wave: %d", currentWave), 10, 34, 18, RAYWHITE);
 
+            int score = Game_GetScore();
+            DrawText(TextFormat("Score: %d", score), 10, 58, 18, RAYWHITE);
+
             if (lives <= 0) {
                 guiState = GUI_STATE_GAMEOVER;
             }
             break;
         }
+
+        case GUI_STATE_SAVE_SCORE: {
+            static char namebuf[5] = {0};
+            static int nameLen = 0;
+            if (prevGuiState != GUI_STATE_SAVE_SCORE) {
+                nameLen = 0; namebuf[0] = '\0';
+            }
+
+            Gui_Draw(GUI_STATE_SAVE_SCORE, 0);
+            DrawText(namebuf, 260, 200, 30, YELLOW);
+
+            int c = GetCharPressed();
+            while (c > 0) {
+                if (isalpha(c) && nameLen < 4) {
+                    namebuf[nameLen++] = (char) toupper(c);
+                    namebuf[nameLen] = '\0';
+                }
+                c = GetCharPressed();
+            }
+            if (IsKeyPressed(KEY_BACKSPACE) && nameLen > 0) {
+                nameLen--; namebuf[nameLen] = '\0';
+            }
+
+            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+                for (int i = nameLen; i < 4; i++) namebuf[i] = '-';
+                namebuf[4] = '\0';
+                Game_SaveScore(namebuf, Game_GetScore());
+                guiState = GUI_STATE_MENU;
+            }
+            break;
+        }
+
+        case GUI_STATE_SCORES:
+            Gui_Draw(GUI_STATE_SCORES, 0);
+            guiState = Gui_Update(guiState);
+            break;
 
         case GUI_STATE_GAMEOVER:
             Gui_Draw(GUI_STATE_GAMEOVER, 0);

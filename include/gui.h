@@ -10,6 +10,8 @@ typedef enum GuiState {
     GUI_STATE_GAME,
     GUI_STATE_PAUSE,
     GUI_STATE_GAMEOVER,
+    GUI_STATE_SAVE_SCORE, 
+    GUI_STATE_SCORES,     
     GUI_STATE_EXIT
 } GuiState;
 
