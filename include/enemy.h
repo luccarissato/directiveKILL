@@ -17,7 +17,8 @@ void Enemies_Draw(Texture2D enemySprite);
 bool Enemies_GetFirstActivePosition(Vector2 *outPos, int *outIndex);
 
 // todos os inimigos atiram com o seu respectivo padrão
-void Enemies_ShootAll(void);
+// playerPos: posição atual do jogador para padrões que miram no jogador
+void Enemies_ShootAll(Vector2 playerPos);
 
 // temporário só pra mostrar qual wave é
 int Enemies_GetCurrentWave(void);

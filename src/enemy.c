@@ -43,6 +43,7 @@ static void SpawnWave(int count) {
             enemies[i].active = true;
             enemies[i].stopped = false;
             enemies[i].hp = 3;
+            enemies[i].type = GetRandomValue(0, 1);
             // variação no limite y para parar os inimigos
             float jitter = (float)GetRandomValue(-30, 30);
             enemies[i].targetY = g_stopY + jitter;
@@ -175,9 +176,9 @@ bool Enemies_GetFirstActivePosition(Vector2 *outPos, int *outIndex) {
     return false;
 }
 
-void Enemies_ShootAll(void) {
+void Enemies_ShootAll(Vector2 playerPos) {
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].active) continue;
-        Projectiles_Type(enemies[i].type, enemies[i].position);
+        Projectiles_Type(enemies[i].type, enemies[i].position, playerPos);
     }
 }

@@ -68,7 +68,7 @@ int main(void)
             shootTimer += delta;
             if (shootTimer >= shootInterval) {
                 shootTimer = 0.0f;
-                Enemies_ShootAll();
+                Enemies_ShootAll(playerPosition);
             }
 
             Player_HandleMovement(&playerPosition, playerRadius, playerSpeed, screenWidth, screenHeight);
@@ -82,6 +82,8 @@ int main(void)
             
             Enemies_Update();
             Enemies_Draw(enemySprite);
+
+            Projectiles_SetPlayerPosition(playerPosition);
 
             Projectiles_Update(delta);
             Projectiles_Draw();
