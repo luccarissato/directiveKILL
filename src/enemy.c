@@ -6,6 +6,8 @@
 #include "../include/game.h"
 
 #define MAX_ENEMIES 10
+#define GRID_COLS 9
+#define GRID_ROWS 2
 
 typedef struct Enemy {
     Vector2 speed;
@@ -18,9 +20,12 @@ typedef struct Enemy {
     float targetY; // onde os inimigos devem parar na tela
     bool stopped;
     int type;
+    int spawnRow;
+    int spawnCol;
 } Enemy;
 
 Enemy enemies[MAX_ENEMIES] = { 0 };
+static bool spawnOccupied[GRID_ROWS][GRID_COLS] = { 0 };
 static float scale = 2.5f;
 static int g_currentWave = 1;
 static int g_enemiesThisWave = 1;
@@ -31,27 +36,72 @@ static bool g_infinite = false;
 
 static void SpawnWave(int count) {
     if (count > MAX_ENEMIES) count = MAX_ENEMIES;
+    int screenW = GetScreenWidth();
+    const float rowSpacing = 40.0f;
+    const int cols = GRID_COLS;
+
+    // decide qual linha usar: preferir a que tiver mais espaços livres
+    int freeCount[GRID_ROWS] = {0};
+    for (int r = 0; r < GRID_ROWS; r++) {
+        for (int c = 0; c < GRID_COLS; c++) if (!spawnOccupied[r][c]) freeCount[r]++;
+    }
+    int chosenRow = 0;
+    if (freeCount[1] > freeCount[0]) chosenRow = 1;
+
+    // lista de colunas livres na linha escolhida
+    int freeCols[GRID_COLS]; int freeColsCount = 0;
+    for (int c = 0; c < GRID_COLS; c++) if (!spawnOccupied[chosenRow][c]) freeCols[freeColsCount++] = c;
+
+    // se não houver colunas livres suficientes na linha, tenta a outra 
+    if (freeColsCount < count) {
+        int other = 1 - chosenRow;
+        int otherCount = 0;
+        for (int c = 0; c < GRID_COLS; c++) if (!spawnOccupied[other][c]) otherCount++;
+        if (otherCount > freeColsCount) {
+            chosenRow = other;
+            freeColsCount = 0;
+            for (int c = 0; c < GRID_COLS; c++) if (!spawnOccupied[chosenRow][c]) freeCols[freeColsCount++] = c;
+        }
+    }
+
+    // limite de células disponíveis
+    int spawnCount = count;
+    if (spawnCount > freeColsCount) spawnCount = freeColsCount;
+
+    // embaralha as colunas livres (aleatorizações nos spawns)
+    for (int k = freeColsCount - 1; k > 0; k--) {
+        int r = GetRandomValue(0, k);
+        int tmp = freeCols[k]; freeCols[k] = freeCols[r]; freeCols[r] = tmp;
+    }
+
+    float cellX = (float)screenW / (cols + 1);
+
     for (int i = 0; i < MAX_ENEMIES; i++) {
-        if (i < count) {
-            // aparecem um pouco acima na tela (antes de entrar em visão)
-            int spawnX = GetRandomValue(0, GetScreenWidth());
+        if (i < spawnCount) {
+            int col = freeCols[i];
+            float px = cellX * (col + 1);
             int spawnY = -GetRandomValue(16, 48);
-            enemies[i].position = (Vector2){ (float)spawnX, (float)spawnY };
-            // velocidade vertical 
-            enemies[i].speed = (Vector2){ 0, (float)GetRandomValue(30, 80) / 60.0f }; // aprox o.5 - 1.3 por frame
+            enemies[i].position = (Vector2){ px, (float)spawnY };
+            // velocidade inicial para descer
+            enemies[i].speed = (Vector2){ 0, (float)GetRandomValue(30, 80) / 60.0f };
             enemies[i].radius = 20.0f;
             enemies[i].active = true;
             enemies[i].stopped = false;
             enemies[i].hp = 3;
             enemies[i].type = GetRandomValue(0, 1);
-            // variação no limite y para parar os inimigos
-            float jitter = (float)GetRandomValue(-30, 30);
-            enemies[i].targetY = g_stopY + jitter;
+            float jitter = (float)GetRandomValue(-10, 10);
+            enemies[i].targetY = g_stopY + chosenRow * rowSpacing + jitter;
+            enemies[i].color = (enemies[i].type == 1) ? RED : WHITE;
+            enemies[i].spawnRow = chosenRow;
+            enemies[i].spawnCol = col;
+            spawnOccupied[chosenRow][col] = true;
         } else {
             // desativa os inimigos não utilizados
             enemies[i].active = false;
             enemies[i].stopped = false;
             enemies[i].hp = 0;
+            enemies[i].spawnRow = -1;
+            enemies[i].spawnCol = -1;
         }
     }
 }
@@ -66,6 +116,10 @@ void Enemies_Init(float stopY) {
     g_enemiesThisWave = 1;
     g_waveTimer = 0.0f;
     g_infinite = false;
+
+    // limpa as células ocupadas e as reseta
+    for (int r = 0; r < GRID_ROWS; r++) for (int c = 0; c < GRID_COLS; c++) spawnOccupied[r][c] = false;
+    for (int i = 0; i < MAX_ENEMIES; i++) { enemies[i].spawnRow = -1; enemies[i].spawnCol = -1; }
 
     SpawnWave(g_enemiesThisWave);
 }
@@ -146,6 +200,13 @@ bool Enemies_CheckHit(Vector2 pos, float radius) {
             enemies[i].hp -= 1;
             if (enemies[i].hp <= 0) {
                 enemies[i].active = false;
+                // free spawn cell if this enemy had one
+                if (enemies[i].spawnRow >= 0 && enemies[i].spawnCol >= 0) {
+                    int sr = enemies[i].spawnRow;
+                    int sc = enemies[i].spawnCol;
+                    if (sr >= 0 && sr < GRID_ROWS && sc >= 0 && sc < GRID_COLS) spawnOccupied[sr][sc] = false;
+                    enemies[i].spawnRow = -1; enemies[i].spawnCol = -1;
+                }
                 Game_AddScore(100);
             }
             return true;
@@ -162,7 +223,7 @@ void Enemies_Draw(Texture2D enemySprite) {
         Rectangle dest = { enemies[i].position.x, enemies[i].position.y, enemySprite.width * scale, enemySprite.height * scale };
         Vector2 origin = { (enemySprite.width * scale) / 2.0f, (enemySprite.height * scale) / 2.0f };
 
-        DrawTexturePro(enemySprite, source, dest, origin, 0.0f, WHITE);
+        DrawTexturePro(enemySprite, source, dest, origin, 0.0f, enemies[i].color);
     }
 }
 
