@@ -101,12 +101,17 @@ void Game_SaveScore(const char *name, int score) {
 }
 
 void Game_DrawScores(void) {
+    // Mantemos a função antiga chamando a nova com posição padrão
+    Game_DrawScoresAt(120);
+}
+
+void Game_DrawScoresAt(int startY) {
     const char *path = "score.txt";
     ScoreNode *head = load_scores_from_file(path);
     int count = 0;
     for (ScoreNode *t = head; t; t = t->next) count++;
     if (count == 0) {
-        DrawText("No scores saved.", 100, 140, 20, RAYWHITE);
+        DrawText("No scores saved.", 100, startY, 20, RAYWHITE);
         free_scores(head);
         return;
     }
@@ -114,7 +119,7 @@ void Game_DrawScores(void) {
     int i = 0;
     for (ScoreNode *t = head; t; t = t->next) arr[i++] = t;
 
-    // buble sort descendente
+    // bubble sort descendente
     for (int a = 0; a < count - 1; a++) {
         for (int b = 0; b < count - 1 - a; b++) {
             if (arr[b]->score < arr[b+1]->score) {
@@ -123,8 +128,7 @@ void Game_DrawScores(void) {
         }
     }
 
-    int y = 120;
-    DrawText("Saved Scores:", 100, 90, 24, RAYWHITE);
+    int y = startY;
     for (int k = 0; k < count; k++) {
         char buf[64];
         snprintf(buf, sizeof(buf), "%d. %s - %d", k+1, arr[k]->name, arr[k]->score);

@@ -93,6 +93,32 @@ $args = $sources + @('-o', $out, '-I', (Join-Path $ray 'raylib\\src'), '-I', $in
 
 Write-Host "Compiling: $($args -join ' ')"
 
+# If output exists, try to remove it first to avoid "Permission denied" from linker
+# If a `main` process is running, try to stop it so linker can write the output
+$running = Get-Process -Name main -ErrorAction SilentlyContinue
+if ($running) {
+    Write-Host "Found running 'main' process(es). Attempting to stop them..."
+    foreach ($p in $running) {
+        try {
+            Stop-Process -Id $p.Id -Force -ErrorAction Stop
+            Write-Host "Stopped process Id $($p.Id)"
+        } catch {
+            Write-Host "Could not stop process Id $($p.Id): $($_.Exception.Message)"
+        }
+    }
+}
+
+# Try to remove existing output file if present
+if (Test-Path $out) {
+    try {
+        Remove-Item $out -Force -ErrorAction Stop
+        Write-Host "Removed existing output: $out"
+    } catch {
+        Write-Error "Cannot remove existing output $out. Ensure the program is not running and you have permission to delete it. Close the running executable and try again."
+        exit 1
+    }
+}
+
 & $compiler @args
 $code = $LASTEXITCODE
 
