@@ -26,6 +26,7 @@ static float reloadTimer = 0.0f;
 static int burstCount = 0;
 static bool isReloading = false;
 static int health = 3;
+static float invulnTimer = 0.0f;
 
 static Texture2D playerSprite;
 static float scale = 2.5f;
@@ -46,6 +47,7 @@ void Player_Init(void)
 	burstCount = 0;
 	isReloading = false;
 	health = 3;
+	invulnTimer = 0.0f;
 	playerSprite = LoadTexture("assets/textures/player.png");
 }
 
@@ -65,6 +67,7 @@ void Player_Reset(void)
 	burstCount = 0;
 	isReloading = false;
 	health = 3;
+	invulnTimer = 0.0f;
 }
 
 void Player_Draw(Vector2 *playerPosition) {
@@ -72,6 +75,13 @@ void Player_Draw(Vector2 *playerPosition) {
 	Rectangle dest = { playerPosition->x, playerPosition->y, (float)playerSprite.width*scale, (float)playerSprite.height*scale};
 	Vector2 origin = { (playerSprite.width*scale) / 2.0f, (playerSprite.height*scale) / 2.0f };
 	DrawTexturePro(playerSprite, source, dest, origin, 0.0f, WHITE);
+
+	if (invulnTimer > 0.0f) {
+		Color wash = (Color){ 255, 255, 255, 120 };
+		Vector2 center = { dest.x, dest.y };
+		float radius = fmaxf(dest.width, dest.height) * 0.5f;
+		DrawCircleV(center, radius, wash);
+	}
 }
 
 void Player_Unload(void)
@@ -81,8 +91,12 @@ void Player_Unload(void)
 
 void Player_TakeDamage(int amount) {
 	if (amount <= 0) return;
+	if (invulnTimer > 0.0f) return;
+
 	health -= amount;
 	if (health < 0) health = 0;
+
+	invulnTimer = 1.0f; 
 }
 
 int Player_GetHealth(void) {
@@ -167,6 +181,11 @@ void Player_HandleShooting(float delta, Vector2 playerPosition)
 
 void Player_UpdateShots(float delta)
 {
+	if (invulnTimer > 0.0f) {
+		invulnTimer -= delta;
+		if (invulnTimer < 0.0f) invulnTimer = 0.0f;
+	}
+
 	for (int i = 0; i < PLAYER_MAX_SHOTS; i++) {
 		if (shoot[i].active) {
 			shoot[i].position.y += shoot[i].speed.y * delta;
