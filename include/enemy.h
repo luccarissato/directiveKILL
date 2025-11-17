@@ -17,8 +17,7 @@ void Enemies_UpdateStopY(float newStopY);
 void Enemies_Update(void);
 
 // desenha os inimigos na tela
-// enemySprite: broken_ship, scoutSprite: scout, soldierSprite: soldier (used for type 2)
-void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldierSprite);
+void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite);
 
 // obtém a posição do primeiro inimigo ativo, retorna true se for bem-sucedido
 bool Enemies_GetFirstActivePosition(Vector2 *outPos, int *outIndex);

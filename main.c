@@ -22,9 +22,7 @@ int main(void)
 
     Texture2D enemySprite = LoadTexture("assets/textures/broken_ship.png");
     Texture2D scoutSprite = LoadTexture("assets/textures/scout.png");
-    Texture2D soldierSprite = LoadTexture("assets/textures/soldier.png");
     Texture2D spikeSprite = LoadTexture("assets/GUI/Elements/spike_proj.png");
-    Texture2D spikeSprite2 = LoadTexture("assets/GUI/Elements/spike_proj2.png");
     float enemiesStopYRatio = 0.27f;
 
     Projectiles_Init(200);
@@ -119,12 +117,12 @@ int main(void)
             Player_Draw(&playerPosition);
 
             Enemies_Update();
-            Enemies_Draw(enemySprite, scoutSprite, soldierSprite);
+            Enemies_Draw(enemySprite, scoutSprite);
 
             Projectiles_SetPlayerPosition(playerPosition);
 
             Projectiles_Update(delta);
-            Projectiles_DrawWithSprite(spikeSprite, spikeSprite2);
+            Projectiles_DrawWithSprite(spikeSprite);
 
             int hits = Projectiles_CheckPlayerCollision(playerPosition, playerRadius);
             if (hits > 0) {
@@ -203,9 +201,7 @@ Gui_Unload();
 Player_Unload();
 UnloadTexture(enemySprite);
 UnloadTexture(scoutSprite);
-UnloadTexture(soldierSprite);
 UnloadTexture(spikeSprite);
-UnloadTexture(spikeSprite2);
 Projectiles_Free();
 CloseWindow();
 return 0;
