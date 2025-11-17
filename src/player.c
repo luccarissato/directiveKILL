@@ -12,7 +12,6 @@
 #define BURST_INTERVAL 0.1f
 #define RELOAD_TIME 0.6f
 
-// player shot lifetime (in frames since code uses an int counter); default doubled from 2600
 #define PLAYER_SHOT_LIFE 5200
 
 typedef struct Shoot {
@@ -24,12 +23,12 @@ typedef struct Shoot {
 	float radius;
 } Shoot;
 
-static Shoot shoot[PLAYER_MAX_SHOTS] = { 0};
+static Shoot shoot[PLAYER_MAX_SHOTS] = { 0 };
 static float burstTimer = 0.0f;
 static float reloadTimer = 0.0f;
 static int burstCount = 0;
 static bool isReloading = false;
-static int health = 3;
+static int health = 1;
 static float invulnTimer = 0.0f;
 
 static Texture2D playerSprite;
@@ -95,13 +94,14 @@ void Player_Unload(void)
 }
 
 void Player_TakeDamage(int amount) {
-	if (amount <= 0) return;
-	if (invulnTimer > 0.0f) return;
+	return;
+	// if (amount <= 0) return;
+	// if (invulnTimer > 0.0f) return;
 
-	health -= amount;
-	if (health < 0) health = 0;
+	// health -= amount;
+	// if (health < 0) health = 0;
 
-	invulnTimer = 1.0f; 
+	// invulnTimer = 1.0f; 
 }
 
 int Player_GetHealth(void) {

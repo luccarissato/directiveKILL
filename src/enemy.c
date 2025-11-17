@@ -27,6 +27,7 @@ typedef struct Enemy {
     float wigglePhase;
     float wiggleAmp;
     float wiggleFreq;
+    bool isBoss;
 } Enemy;
 
 Enemy enemies[MAX_ENEMIES] = { 0 };
@@ -46,6 +47,39 @@ static void SpawnWave(int count) {
     int screenW = GetScreenWidth();
     const float rowSpacing = 40.0f;
     const int cols = GRID_COLS;
+
+    if (g_currentWave == 6) {
+        for (int i = 0; i < MAX_ENEMIES; i++) {
+            enemies[i].active = false;
+            enemies[i].stopped = false;
+            enemies[i].hp = 0;
+            enemies[i].spawnRow = -1;
+            enemies[i].spawnCol = -1;
+            enemies[i].isBoss = false;
+        }
+        for (int r = 0; r < GRID_ROWS; r++) for (int c = 0; c < GRID_COLS; c++) spawnOccupied[r][c] = false;
+
+        float centerX = (float)screenW * 0.5f;
+        int spawnY = -GetRandomValue(80, 120);
+        enemies[0].position = (Vector2){ centerX, (float)spawnY };
+        enemies[0].speed = (Vector2){ 0, (float)GetRandomValue(20, 60) / 60.0f };
+        enemies[0].radius = 48.0f;
+        enemies[0].active = true;
+        enemies[0].stopped = false;
+        enemies[0].hp = 60;
+        enemies[0].type = 0;
+        enemies[0].targetY = g_stopY + rowSpacing;
+        enemies[0].color = WHITE;
+        enemies[0].spawnRow = -1;
+        enemies[0].spawnCol = -1;
+        enemies[0].homeX = centerX;
+        enemies[0].motionTimer = 0.0f;
+        enemies[0].wigglePhase = 0.0f;
+        enemies[0].wiggleAmp = 0.0f;
+        enemies[0].wiggleFreq = 0.0f;
+        enemies[0].isBoss = true;
+        return;
+    }
 
     int freeCount[GRID_ROWS] = {0};
     for (int r = 0; r < GRID_ROWS; r++) {
@@ -97,7 +131,6 @@ static void SpawnWave(int count) {
             float jitter = (float)GetRandomValue(-10, 10);
             enemies[i].targetY = g_stopY + chosenRow * rowSpacing + jitter;
             if (enemies[i].type == 2) {
-                // use default white color for soldier sprite (no tint)
                 enemies[i].color = WHITE;
             } else {
                 enemies[i].color = (enemies[i].type == 1) ? RED : WHITE;
@@ -114,6 +147,7 @@ static void SpawnWave(int count) {
                 enemies[i].wiggleAmp = (float)GetRandomValue(10, 22);
                 enemies[i].wiggleFreq = (float)GetRandomValue(60, 120) / 100.0f;
             }
+            enemies[i].isBoss = false;
             spawnOccupied[chosenRow][col] = true;
         } else {
             enemies[i].active = false;
@@ -121,8 +155,10 @@ static void SpawnWave(int count) {
             enemies[i].hp = 0;
             enemies[i].spawnRow = -1;
             enemies[i].spawnCol = -1;
+            enemies[i].isBoss = false;
         }
     }
+    
 }
 
 void Enemies_SetPlayArea(float leftX, float rightX) {
@@ -143,7 +179,7 @@ void Enemies_Init(float stopY) {
     g_infinite = false;
 
     for (int r = 0; r < GRID_ROWS; r++) for (int c = 0; c < GRID_COLS; c++) spawnOccupied[r][c] = false;
-    for (int i = 0; i < MAX_ENEMIES; i++) { enemies[i].spawnRow = -1; enemies[i].spawnCol = -1; }
+    for (int i = 0; i < MAX_ENEMIES; i++) { enemies[i].spawnRow = -1; enemies[i].spawnCol = -1; enemies[i].isBoss = false; }
 
     SpawnWave(g_enemiesThisWave);
 }
@@ -279,14 +315,17 @@ bool Enemies_CheckHit(Vector2 pos, float radius) {
     return false;
 }
 
-void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldierSprite) {
+void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldierSprite, Texture2D arcSprite, Texture2D arc2Sprite, Texture2D arc3Sprite, Texture2D arc4Sprite) {
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].active) continue;
 
         Texture2D currentSprite;
         Color tint = WHITE;
 
-        if (enemies[i].type == 1) {
+        if (enemies[i].isBoss) {
+            currentSprite = arcSprite;
+            tint = WHITE;
+        } else if (enemies[i].type == 1) {
             currentSprite = scoutSprite;
             tint = WHITE;
         } else if (enemies[i].type == 2) {
@@ -300,6 +339,36 @@ void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldie
         Rectangle source = { 0, 0, (float)currentSprite.width, (float)currentSprite.height };
         Rectangle dest = { enemies[i].position.x, enemies[i].position.y, currentSprite.width * scale, currentSprite.height * scale };
         Vector2 origin = { (currentSprite.width * scale) / 2.0f, (currentSprite.height * scale) / 2.0f };
+
+        if (enemies[i].isBoss && arc2Sprite.width > 0 && arc2Sprite.height > 0) {
+            float halfH = (currentSprite.height * scale) / 2.0f;
+            float topY = enemies[i].position.y - halfH;
+
+            if (arc3Sprite.width > 0 && arc3Sprite.height > 0) {
+                float arc2CenterX = enemies[i].position.x;
+                float arc3CenterX = arc2CenterX - (arc2Sprite.width * scale) / 2.0f - (arc3Sprite.width * scale) / 2.0f;
+
+                Rectangle source3 = { 0, 0, (float)arc3Sprite.width, (float)arc3Sprite.height };
+                Rectangle dest3 = { arc3CenterX, topY, arc3Sprite.width * scale, arc3Sprite.height * scale };
+                Vector2 origin3 = { (arc3Sprite.width * scale) / 2.0f, arc3Sprite.height * scale };
+                DrawTexturePro(arc3Sprite, source3, dest3, origin3, 0.0f, WHITE);
+            }
+
+            Rectangle source2 = { 0, 0, (float)arc2Sprite.width, (float)arc2Sprite.height };
+            Rectangle dest2 = { enemies[i].position.x, topY, arc2Sprite.width * scale, arc2Sprite.height * scale };
+            Vector2 origin2 = { (arc2Sprite.width * scale) / 2.0f, arc2Sprite.height * scale };
+            DrawTexturePro(arc2Sprite, source2, dest2, origin2, 0.0f, WHITE);
+
+            if (arc4Sprite.width > 0 && arc4Sprite.height > 0) {
+                float arc2CenterX = enemies[i].position.x;
+                float arc4CenterX = arc2CenterX + (arc2Sprite.width * scale) / 2.0f + (arc4Sprite.width * scale) / 2.0f;
+
+                Rectangle source4 = { 0, 0, (float)arc4Sprite.width, (float)arc4Sprite.height };
+                Rectangle dest4 = { arc4CenterX, topY, arc4Sprite.width * scale, arc4Sprite.height * scale };
+                Vector2 origin4 = { (arc4Sprite.width * scale) / 2.0f, arc4Sprite.height * scale };
+                DrawTexturePro(arc4Sprite, source4, dest4, origin4, 0.0f, WHITE);
+            }
+        }
 
         DrawTexturePro(currentSprite, source, dest, origin, 0.0f, tint);
     }

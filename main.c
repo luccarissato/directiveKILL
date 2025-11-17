@@ -23,8 +23,12 @@ int main(void)
     Texture2D enemySprite = LoadTexture("assets/textures/broken_ship.png");
     Texture2D scoutSprite = LoadTexture("assets/textures/scout.png");
     Texture2D soldierSprite = LoadTexture("assets/textures/soldier.png");
-    Texture2D spikeSprite = LoadTexture("assets/GUI/Elements/spike_proj.png");
-    Texture2D spike2Sprite = LoadTexture("assets/GUI/Elements/spike_proj2.png");
+        Texture2D arcSprite = LoadTexture("assets/textures/the_arc.png");
+        Texture2D arc2Sprite = LoadTexture("assets/textures/the_arc2.png");
+        Texture2D arc3Sprite = LoadTexture("assets/textures/the_arc3.png");
+        Texture2D arc4Sprite = LoadTexture("assets/textures/the_arc4.png");
+        Texture2D spikeSprite = LoadTexture("assets/GUI/Elements/spike_proj.png");
+        Texture2D spike2Sprite = LoadTexture("assets/GUI/Elements/spike_proj2.png");
     float enemiesStopYRatio = 0.27f;
 
     Projectiles_Init(200);
@@ -119,7 +123,7 @@ int main(void)
             Player_Draw(&playerPosition);
 
             Enemies_Update();
-            Enemies_Draw(enemySprite, scoutSprite, soldierSprite);
+            Enemies_Draw(enemySprite, scoutSprite, soldierSprite, arcSprite, arc2Sprite, arc3Sprite, arc4Sprite);
 
             Projectiles_SetPlayerPosition(playerPosition);
 
@@ -204,6 +208,10 @@ Player_Unload();
 UnloadTexture(enemySprite);
 UnloadTexture(scoutSprite);
 UnloadTexture(soldierSprite);
+UnloadTexture(arcSprite);
+UnloadTexture(arc2Sprite);
+UnloadTexture(arc3Sprite);
+UnloadTexture(arc4Sprite);
 UnloadTexture(spikeSprite);
 UnloadTexture(spike2Sprite);
 Projectiles_Free();
