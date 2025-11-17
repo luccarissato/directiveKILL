@@ -222,7 +222,7 @@ void Enemies_Update(void) {
             enemies[i].motionTimer += dt;
             float t = enemies[i].motionTimer;
 
-            if (enemies[i].type == 0) {
+            if (enemies[i].type == 0 || enemies[i].type == 2) {
                 float amp = enemies[i].wiggleAmp;
                 float freq = enemies[i].wiggleFreq;
                 float mainOsc = sinf(t * freq + enemies[i].wigglePhase) * amp;
