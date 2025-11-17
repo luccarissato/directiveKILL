@@ -4,6 +4,7 @@
 #include <math.h>
 #include "../include/projectile.h"
 #include "../include/game.h"
+#include "../include/gui.h"
 
 #define MAX_ENEMIES 10
 #define GRID_COLS 9
@@ -31,7 +32,7 @@ typedef struct Enemy {
 
 Enemy enemies[MAX_ENEMIES] = { 0 };
 static bool spawnOccupied[GRID_ROWS][GRID_COLS] = { 0 };
-static float scale = 2.5f;
+static float base_draw_scale = 1.25f; // reduced by half
 static int g_currentWave = 1;
 static int g_enemiesThisWave = 1;
 static float g_waveTimer = 0.0f;
@@ -89,7 +90,7 @@ static void SpawnWave(int count) {
             int spawnY = -GetRandomValue(16, 48);
             enemies[i].position = (Vector2){ px, (float)spawnY };
             enemies[i].speed = (Vector2){ 0, (float)GetRandomValue(30, 80) / 60.0f };
-            enemies[i].radius = 20.0f;
+            enemies[i].radius = 10.0f * GUI_GetScale(); // half of previous 20.0f
             enemies[i].active = true;
             enemies[i].stopped = false;
             enemies[i].hp = 3;
@@ -284,7 +285,7 @@ void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite) {
 
         Texture2D currentSprite = (enemies[i].type == 1) ? scoutSprite : enemySprite;
         Color tint = (enemies[i].type == 1) ? WHITE : enemies[i].color;
-
+        float scale = GUI_GetScale() * base_draw_scale;
         Rectangle source = { 0, 0, (float)currentSprite.width, (float)currentSprite.height };
         Rectangle dest = { enemies[i].position.x, enemies[i].position.y, currentSprite.width * scale, currentSprite.height * scale };
         Vector2 origin = { (currentSprite.width * scale) / 2.0f, (currentSprite.height * scale) / 2.0f };

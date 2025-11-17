@@ -5,11 +5,15 @@
 #include <string.h>
 #include <math.h>
 #include "../include/enemy.h"
+#include "../include/gui.h"
 
 #define PLAYER_MAX_SHOTS 50
 #define BURST_SIZE 3
 #define BURST_INTERVAL 0.1f
 #define RELOAD_TIME 0.6f
+
+// player shot lifetime (in frames since code uses an int counter); default doubled from 2600
+#define PLAYER_SHOT_LIFE 5200
 
 typedef struct Shoot {
 	Vector2 speed;
@@ -29,7 +33,7 @@ static int health = 3;
 static float invulnTimer = 0.0f;
 
 static Texture2D playerSprite;
-static float scale = 2.5f;
+static float base_draw_scale = 1.25f; // reduced by half
 
 void Player_Init(void)
 {
@@ -71,9 +75,10 @@ void Player_Reset(void)
 }
 
 void Player_Draw(Vector2 *playerPosition) {
+	float scale = GUI_GetScale() * base_draw_scale;
 	Rectangle source = { 0, 0, (float)playerSprite.width, (float)playerSprite.height };
-	Rectangle dest = { playerPosition->x, playerPosition->y, (float)playerSprite.width*scale, (float)playerSprite.height*scale};
-	Vector2 origin = { (playerSprite.width*scale) / 2.0f, (playerSprite.height*scale) / 2.0f };
+	Rectangle dest = { playerPosition->x, playerPosition->y, (float)playerSprite.width * scale, (float)playerSprite.height * scale };
+	Vector2 origin = { (playerSprite.width * scale) / 2.0f, (playerSprite.height * scale) / 2.0f };
 	DrawTexturePro(playerSprite, source, dest, origin, 0.0f, WHITE);
 
 	if (invulnTimer > 0.0f) {
@@ -154,8 +159,8 @@ void Player_HandleShooting(float delta, Vector2 playerPosition)
 				if (!shoot[i].active) {
 					shoot[i].position = (Vector2){ playerPosition.x, playerPosition.y };
 					shoot[i].speed = (Vector2){ 0.0f, -700.0f };
-					shoot[i].lifeSpawn = 2600;
-					shoot[i].radius = 4.0f;
+					shoot[i].lifeSpawn = PLAYER_SHOT_LIFE;
+					shoot[i].radius = 1.0f * GUI_GetScale(); // reduced by half again
 					shoot[i].color = RAYWHITE;
 					shoot[i].active = true;
 					break;
