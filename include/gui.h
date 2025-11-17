@@ -27,4 +27,10 @@ void Gui_Draw(GuiState state, int playerLives);
 // Libera recursos da GUI (opcional)
 void Gui_Unload(void);
 
+// Retorna escala baseada no tamanho atual da janela (base 800x450)
+float GUI_GetScale(void);
+
+// Retorna tamanho de fonte escalado
+int GUI_GetScaledFontSize(int baseSize);
+
 #endif // GUI_H

@@ -17,6 +17,8 @@ typedef struct Projectile {
     // the player's current position with this speed (pixels/sec)
     float homingSpeed;
     bool willHome;
+    int visualType; // 0 = circle, 1 = spike
+    bool flipSprite; // para spike da esquerda (invertido)
 } Projectile;
 
 // inicializa os projeteis com uma quantidade fixa deles
@@ -36,6 +38,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target);
 // update e atualiza os projeteis
 void Projectiles_Update(float dt);
 void Projectiles_Draw(void);
+void Projectiles_DrawWithSprite(Texture2D spikeSprite);
 
 // free na pool de projeteis
 void Projectiles_Free(void);

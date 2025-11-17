@@ -22,6 +22,12 @@ typedef struct Enemy {
     int type;
     int spawnRow;
     int spawnCol;
+    // comportamiento local: âncora X e temporizador para movimentos laterais/curvas
+    float homeX;
+    float motionTimer;
+    float wigglePhase;
+    float wiggleAmp;
+    float wiggleFreq;
 } Enemy;
 
 Enemy enemies[MAX_ENEMIES] = { 0 };
@@ -94,6 +100,18 @@ static void SpawnWave(int count) {
             enemies[i].color = (enemies[i].type == 1) ? RED : WHITE;
             enemies[i].spawnRow = chosenRow;
             enemies[i].spawnCol = col;
+            // inicializa valores para o movimento local
+            enemies[i].homeX = px;
+            enemies[i].motionTimer = 0.0f;
+            enemies[i].wigglePhase = (float)GetRandomValue(0, 6283) / 1000.0f; // 0..~6.283
+            // amplitudes e frequências levemente distintas por tipo
+            if (enemies[i].type == 0) {
+                enemies[i].wiggleAmp = (float)GetRandomValue(12, 28); // pixels
+                enemies[i].wiggleFreq = (float)GetRandomValue(80, 140) / 100.0f; // ~0.8 - 1.4 rad/s
+            } else {
+                enemies[i].wiggleAmp = (float)GetRandomValue(10, 22);
+                enemies[i].wiggleFreq = (float)GetRandomValue(60, 120) / 100.0f;
+            }
             spawnOccupied[chosenRow][col] = true;
         } else {
             // desativa os inimigos não utilizados
@@ -124,6 +142,18 @@ void Enemies_Init(float stopY) {
     SpawnWave(g_enemiesThisWave);
 }
 
+void Enemies_UpdateStopY(float newStopY) {
+    float delta = newStopY - g_stopY;
+    g_stopY = newStopY;
+    
+    // Atualiza targetY de todos os inimigos ativos
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (enemies[i].active) {
+            enemies[i].targetY += delta;
+        }
+    }
+}
+
 void Enemies_Update(void) {
     // parada mais suavizada dos inimigos sem depender de FPS
     float dt = GetFrameTime();
@@ -131,22 +161,68 @@ void Enemies_Update(void) {
 
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].active) continue;
-        if (enemies[i].stopped) continue;
 
-        float toTarget = enemies[i].targetY - enemies[i].position.y;
+        if (!enemies[i].stopped) {
+            // ainda descendo para a posição alvo
+            float toTarget = enemies[i].targetY - enemies[i].position.y;
 
-        // interpolação necessária pra suavização, factor sendo a distância que o inimigo percorre nesse frame
-        float factor = smoothing * dt;
-        // evita ultrapassar o alvo de uma vez só
-        if (factor > 1.0f) factor = 1.0f;
+            // interpolação necessária pra suavização, factor sendo a distância que o inimigo percorre nesse frame
+            float factor = smoothing * dt;
+            // evita ultrapassar o alvo de uma vez só
+            if (factor > 1.0f) factor = 1.0f;
 
-        enemies[i].position.y += toTarget * factor;
+            enemies[i].position.y += toTarget * factor;
 
-        // quando a diferença for menor que 0.5 pixels, para direto
-        if (fabsf(enemies[i].targetY - enemies[i].position.y) <= 0.5f) {
-            enemies[i].position.y = enemies[i].targetY;
-            enemies[i].stopped = true;
-            enemies[i].speed.y = 0.0f;
+            // quando a diferença for menor que 0.5 pixels, para direto
+            if (fabsf(enemies[i].targetY - enemies[i].position.y) <= 0.5f) {
+                enemies[i].position.y = enemies[i].targetY;
+                enemies[i].stopped = true;
+                enemies[i].speed.y = 0.0f;
+                // reseta timer para movimento local assim que estacionar
+                enemies[i].motionTimer = 0.0f;
+            }
+        } else {
+            // comportamento de movimento horizontal/curva após parar
+            enemies[i].motionTimer += dt;
+            float t = enemies[i].motionTimer;
+
+            if (enemies[i].type == 0) {
+                // Broken ship: movimento lateral levemente errático em torno da homeX
+                float amp = enemies[i].wiggleAmp;
+                float freq = enemies[i].wiggleFreq;
+                // combinação de duas senoides para dar aspecto errático
+                float mainOsc = sinf(t * freq + enemies[i].wigglePhase) * amp;
+                float noise = sinf(t * (freq * 1.73f) + enemies[i].wigglePhase * 1.31f) * (amp * 0.25f);
+                float targetX = enemies[i].homeX + mainOsc + noise;
+
+                // suaviza a transição na posição X para evitar saltos bruscos
+                const float xSmooth = 8.0f;
+                enemies[i].position.x += (targetX - enemies[i].position.x) * fminf(dt * xSmooth, 1.0f);
+
+                // garante que não saia muito da home (limita a 1.5 * amp)
+                float maxOff = amp * 1.5f;
+                if (enemies[i].position.x > enemies[i].homeX + maxOff) enemies[i].position.x = enemies[i].homeX + maxOff;
+                if (enemies[i].position.x < enemies[i].homeX - maxOff) enemies[i].position.x = enemies[i].homeX - maxOff;
+            }
+            else if (enemies[i].type == 1) {
+                // Scout: pequeno movimento em forma de "U". Use seno para Y (positiva) e cosseno para X.
+                float ampX = enemies[i].wiggleAmp;
+                float ampY = enemies[i].wiggleAmp * 0.6f;
+                float freq = enemies[i].wiggleFreq;
+                float phase = enemies[i].wigglePhase;
+
+                float ox = cosf(t * freq + phase) * ampX;
+                // U: use valor absoluto da senoide para descer e subir
+                float oy = fabsf(sinf(t * freq + phase)) * ampY;
+
+                float targetX = enemies[i].homeX + ox;
+                float targetY = enemies[i].targetY + oy; // deslocamento vertical pequeno
+
+                // suaviza a transição para evitar saltos
+                const float smooth = 6.0f;
+                enemies[i].position.x += (targetX - enemies[i].position.x) * fminf(dt * smooth, 1.0f);
+                enemies[i].position.y += (targetY - enemies[i].position.y) * fminf(dt * smooth, 1.0f);
+            }
         }
     }
 
@@ -215,15 +291,19 @@ bool Enemies_CheckHit(Vector2 pos, float radius) {
     return false;
 }
 
-void Enemies_Draw(Texture2D enemySprite) {
+void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite) {
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].active) continue;
 
-        Rectangle source = { 0, 0, enemySprite.width, enemySprite.height };
-        Rectangle dest = { enemies[i].position.x, enemies[i].position.y, enemySprite.width * scale, enemySprite.height * scale };
-        Vector2 origin = { (enemySprite.width * scale) / 2.0f, (enemySprite.height * scale) / 2.0f };
+        // Tipo 1 usa scout sprite, outros usam sprite normal
+        Texture2D currentSprite = (enemies[i].type == 1) ? scoutSprite : enemySprite;
+        Color tint = (enemies[i].type == 1) ? WHITE : enemies[i].color;
 
-        DrawTexturePro(enemySprite, source, dest, origin, 0.0f, enemies[i].color);
+        Rectangle source = { 0, 0, (float)currentSprite.width, (float)currentSprite.height };
+        Rectangle dest = { enemies[i].position.x, enemies[i].position.y, currentSprite.width * scale, currentSprite.height * scale };
+        Vector2 origin = { (currentSprite.width * scale) / 2.0f, (currentSprite.height * scale) / 2.0f };
+
+        DrawTexturePro(currentSprite, source, dest, origin, 0.0f, tint);
     }
 }
 

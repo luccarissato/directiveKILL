@@ -108,14 +108,17 @@ void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float pl
 		playerPosition->y += movement.y;
 	}
 
+	// Limite superior proporcional (aproximadamente 35% da altura)
+	float topLimit = screenHeight * 0.35f;
+
 	if (playerPosition->x - playerRadius < -playerRadius / 2)
 		playerPosition->x = -playerRadius / 2 + playerRadius;
 
 	if (playerPosition->x + playerRadius > screenWidth + playerRadius / 2)
 		playerPosition->x = screenWidth + playerRadius / 2 - playerRadius;
 
-	if (playerPosition->y - playerRadius < 350)
-		playerPosition->y = 350 + playerRadius;
+	if (playerPosition->y - playerRadius < topLimit)
+		playerPosition->y = topLimit + playerRadius;
 
 	if (playerPosition->y + playerRadius > screenHeight + playerRadius / 2)
 		playerPosition->y = screenHeight + playerRadius / 2 - playerRadius;

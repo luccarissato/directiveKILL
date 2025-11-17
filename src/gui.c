@@ -52,6 +52,21 @@ static int clampSelection(int sel, int count) {
     return sel;
 }
 
+float GUI_GetScale(void) {
+    int sw = GetScreenWidth();
+    int sh = GetScreenHeight();
+    float scaleX = (float)sw / 800.0f;
+    float scaleY = (float)sh / 450.0f;
+    return fminf(scaleX, scaleY);
+}
+
+int GUI_GetScaledFontSize(int baseSize) {
+    float scale = GUI_GetScale();
+    int scaled = (int)((float)baseSize * scale);
+    if (scaled < 10) scaled = 10;
+    return scaled;
+}
+
 GuiState Gui_Update(GuiState currentState) {
     if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) {
         if (currentState == GUI_STATE_MENU) menuSelection = clampSelection(menuSelection - 1, 3);
@@ -67,7 +82,7 @@ GuiState Gui_Update(GuiState currentState) {
         else if (currentState == GUI_STATE_SCORES) menuSelection = clampSelection(menuSelection + 1, 1);
     }
 
-    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+    if (( !IsKeyDown(KEY_LEFT_ALT) && !IsKeyDown(KEY_RIGHT_ALT) ) && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE))) {
         if (currentState == GUI_STATE_MENU) {
             if (menuSelection == 0) return GUI_STATE_GAME;      
             if (menuSelection == 1) return GUI_STATE_SCORES;   
@@ -138,14 +153,24 @@ void Gui_Draw(GuiState state, int playerLives) {
         }
 
         case GUI_STATE_GAME: {
-            DrawText(TextFormat("Lives: %d", playerLives), 10, 10, 20, RAYWHITE);
+            int fontSize = GUI_GetScaledFontSize(20);
+            int margin = (int)(10 * GUI_GetScale());
+            DrawText(TextFormat("Lives: %d", playerLives), margin, margin, fontSize, RAYWHITE);
             break;
         }
 
         case GUI_STATE_PAUSE: {
-            DrawText("PAUSED", 360, 200, 40, RAYWHITE);
+            int sw = GetScreenWidth();
+            int sh = GetScreenHeight();
+            int titleSize = GUI_GetScaledFontSize(40);
+            int optionSize = GUI_GetScaledFontSize(20);
+            const char *pauseText = "PAUSED";
+            int pauseWidth = MeasureText(pauseText, titleSize);
+            DrawText(pauseText, sw/2 - pauseWidth/2, sh/2 - 100, titleSize, RAYWHITE);
             Color resumeCol = (menuSelection == 0) ? YELLOW : RAYWHITE;
-            DrawText("Resume", optionX, optionStartY + 50, 20, resumeCol);
+            const char *resumeText = "Resume";
+            int resumeWidth = MeasureText(resumeText, optionSize);
+            DrawText(resumeText, sw/2 - resumeWidth/2, sh/2 - 20, optionSize, resumeCol);
             break;
         }
 
@@ -238,17 +263,30 @@ void Gui_Draw(GuiState state, int playerLives) {
             }
             // Agora desenha os scores começando logo abaixo da imagem `scoreMenu` (ou em y padrão se não existir)
             int scoresStartY = (int)(dstY + dstH + 10.0f);
-            // Se a imagem ficou muito grande e empurrou os scores para baixo,
-            // limitamos a posição para o valor padrão (120) para que a lista
-            // permaneça visível e com espaçamento semelhante ao anterior.
-            if (scoresStartY > 120) scoresStartY = 120;
-            if (dstH <= 0) scoresStartY = 120;
-            Game_DrawScoresAt(scoresStartY);
-            DrawText("(press Enter to return)", 100, GetScreenHeight() - 40, 18, RAYWHITE);
+            // Limita a posição para que caiba na tela
+            int maxStartY = (int)(sh * 0.3f);
+            if (scoresStartY > maxStartY || dstH <= 0) scoresStartY = maxStartY;
+            
+            int scoreFontSize = GUI_GetScaledFontSize(20);
+            int scoreLineSpacing = (int)(28 * GUI_GetScale());
+            if (scoreLineSpacing < 20) scoreLineSpacing = 20;
+            Game_DrawScoresAtScaled(scoresStartY, scoreFontSize, scoreLineSpacing);
+            
+            int fontSize = GUI_GetScaledFontSize(18);
+            int margin = (int)(10 * GUI_GetScale());
+            DrawText("(press Enter to return)", margin * 10, sh - margin * 4, fontSize, RAYWHITE);
             break;
         }
         case GUI_STATE_SAVE_SCORE: {
-            DrawText("Enter 4-letter name and press Enter:", 160, 160, 20, RAYWHITE);
+            int sw = GetScreenWidth();
+            int sh = GetScreenHeight();
+            int fontSize = GUI_GetScaledFontSize(20);
+            int nameSize = GUI_GetScaledFontSize(30);
+            const char *promptText = "Enter 4-letter name and press Enter:";
+            int promptWidth = MeasureText(promptText, fontSize);
+            int promptX = sw/2 - promptWidth/2;
+            int promptY = sh/2 - 100;
+            DrawText(promptText, promptX, promptY, fontSize, RAYWHITE);
             break;
         }
     }
