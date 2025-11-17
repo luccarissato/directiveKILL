@@ -21,5 +21,9 @@ void Game_SaveScore(const char *name, int score);
 
 // mostra os scores salvos na tela (usado por GUI_STATE_SCORES)
 void Game_DrawScores(void);
+// desenha os scores começando na posição Y fornecida (usado pela GUI quando o título é uma imagem)
+void Game_DrawScoresAt(int startY);
+// desenha os scores com fonte escalada
+void Game_DrawScoresAtScaled(int startY, int fontSize, int lineSpacing);
 
 #endif // GAME_H

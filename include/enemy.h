@@ -7,11 +7,17 @@
 // inicializa os inimigos; pass a Y coordinate where enemies should stop (from top)
 void Enemies_Init(float stopY);
 
+// Define a área horizontal (left,right) onde inimigos devem nascer e permanecer.
+void Enemies_SetPlayArea(float leftX, float rightX);
+
+// atualiza a posição de parada dos inimigos (quando janela é redimensionada)
+void Enemies_UpdateStopY(float newStopY);
+
 // atualiza a posição dos inimigos
 void Enemies_Update(void);
 
 // desenha os inimigos na tela
-void Enemies_Draw(Texture2D enemySprite);
+void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite);
 
 // obtém a posição do primeiro inimigo ativo, retorna true se for bem-sucedido
 bool Enemies_GetFirstActivePosition(Vector2 *outPos, int *outIndex);

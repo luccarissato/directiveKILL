@@ -12,8 +12,8 @@ void Player_Unload(void);
 // desenha o player na tela
 void Player_Draw(Vector2 *playerPosition);
 
-// movimentação do player dentro da tela
-void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float playerSpeed, int screenWidth, int screenHeight);
+// movimentação do player dentro da área de jogo (passar limites left/right/top/bottom)
+void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float playerSpeed, float leftBound, float rightBound, float topBound, float bottomBound);
 
 // lógica de tiro e intervalo entre rajadas
 void Player_HandleShooting(float delta, Vector2 playerPosition);

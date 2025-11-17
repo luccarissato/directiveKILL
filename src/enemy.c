@@ -22,6 +22,11 @@ typedef struct Enemy {
     int type;
     int spawnRow;
     int spawnCol;
+    float homeX;
+    float motionTimer;
+    float wigglePhase;
+    float wiggleAmp;
+    float wiggleFreq;
 } Enemy;
 
 Enemy enemies[MAX_ENEMIES] = { 0 };
@@ -33,6 +38,8 @@ static float g_waveTimer = 0.0f;
 static const float g_waveTimeout = 30.0f;
 static float g_stopY = 120.0f;
 static bool g_infinite = false;
+static float g_playLeft = 0.0f;
+static float g_playRight = 0.0f;
 
 static void SpawnWave(int count) {
     if (count > MAX_ENEMIES) count = MAX_ENEMIES;
@@ -40,7 +47,6 @@ static void SpawnWave(int count) {
     const float rowSpacing = 40.0f;
     const int cols = GRID_COLS;
 
-    // decide qual linha usar: preferir a que tiver mais espaços livres
     int freeCount[GRID_ROWS] = {0};
     for (int r = 0; r < GRID_ROWS; r++) {
         for (int c = 0; c < GRID_COLS; c++) if (!spawnOccupied[r][c]) freeCount[r]++;
@@ -48,11 +54,9 @@ static void SpawnWave(int count) {
     int chosenRow = 0;
     if (freeCount[1] > freeCount[0]) chosenRow = 1;
 
-    // lista de colunas livres na linha escolhida
     int freeCols[GRID_COLS]; int freeColsCount = 0;
     for (int c = 0; c < GRID_COLS; c++) if (!spawnOccupied[chosenRow][c]) freeCols[freeColsCount++] = c;
 
-    // se não houver colunas livres suficientes na linha, tenta a outra 
     if (freeColsCount < count) {
         int other = 1 - chosenRow;
         int otherCount = 0;
@@ -64,25 +68,26 @@ static void SpawnWave(int count) {
         }
     }
 
-    // limite de células disponíveis
     int spawnCount = count;
     if (spawnCount > freeColsCount) spawnCount = freeColsCount;
 
-    // embaralha as colunas livres (aleatorizações nos spawns)
     for (int k = freeColsCount - 1; k > 0; k--) {
         int r = GetRandomValue(0, k);
         int tmp = freeCols[k]; freeCols[k] = freeCols[r]; freeCols[r] = tmp;
     }
 
-    float cellX = (float)screenW / (cols + 1);
+    float playLeft = 0.0f;
+    float playRight = (float)screenW;
+    if (g_playRight > g_playLeft) { playLeft = g_playLeft; playRight = g_playRight; }
+    float playWidth = playRight - playLeft;
+    float cellX = playWidth / (cols + 1);
 
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (i < spawnCount) {
             int col = freeCols[i];
-            float px = cellX * (col + 1);
+            float px = playLeft + cellX * (col + 1);
             int spawnY = -GetRandomValue(16, 48);
             enemies[i].position = (Vector2){ px, (float)spawnY };
-            // velocidade inicial para descer
             enemies[i].speed = (Vector2){ 0, (float)GetRandomValue(30, 80) / 60.0f };
             enemies[i].radius = 20.0f;
             enemies[i].active = true;
@@ -94,9 +99,18 @@ static void SpawnWave(int count) {
             enemies[i].color = (enemies[i].type == 1) ? RED : WHITE;
             enemies[i].spawnRow = chosenRow;
             enemies[i].spawnCol = col;
+            enemies[i].homeX = px;
+            enemies[i].motionTimer = 0.0f;
+            enemies[i].wigglePhase = (float)GetRandomValue(0, 6283) / 1000.0f;
+            if (enemies[i].type == 0) {
+                enemies[i].wiggleAmp = (float)GetRandomValue(12, 28); 
+                enemies[i].wiggleFreq = (float)GetRandomValue(80, 140) / 100.0f;
+            } else {
+                enemies[i].wiggleAmp = (float)GetRandomValue(10, 22);
+                enemies[i].wiggleFreq = (float)GetRandomValue(60, 120) / 100.0f;
+            }
             spawnOccupied[chosenRow][col] = true;
         } else {
-            // desativa os inimigos não utilizados
             enemies[i].active = false;
             enemies[i].stopped = false;
             enemies[i].hp = 0;
@@ -104,6 +118,12 @@ static void SpawnWave(int count) {
             enemies[i].spawnCol = -1;
         }
     }
+}
+
+void Enemies_SetPlayArea(float leftX, float rightX) {
+    if (rightX <= leftX) return;
+    g_playLeft = leftX;
+    g_playRight = rightX;
 }
 
 int Enemies_GetCurrentWave(void) {
@@ -117,36 +137,78 @@ void Enemies_Init(float stopY) {
     g_waveTimer = 0.0f;
     g_infinite = false;
 
-    // limpa as células ocupadas e as reseta
     for (int r = 0; r < GRID_ROWS; r++) for (int c = 0; c < GRID_COLS; c++) spawnOccupied[r][c] = false;
     for (int i = 0; i < MAX_ENEMIES; i++) { enemies[i].spawnRow = -1; enemies[i].spawnCol = -1; }
 
     SpawnWave(g_enemiesThisWave);
 }
 
+void Enemies_UpdateStopY(float newStopY) {
+    float delta = newStopY - g_stopY;
+    g_stopY = newStopY;
+    
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (enemies[i].active) {
+            enemies[i].targetY += delta;
+        }
+    }
+}
+
 void Enemies_Update(void) {
-    // parada mais suavizada dos inimigos sem depender de FPS
     float dt = GetFrameTime();
-    const float smoothing = 6.0f; // para que inimigos maiores possam chegar mais rápido
+    const float smoothing = 6.0f;
 
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].active) continue;
-        if (enemies[i].stopped) continue;
 
-        float toTarget = enemies[i].targetY - enemies[i].position.y;
+        if (!enemies[i].stopped) {
+            float toTarget = enemies[i].targetY - enemies[i].position.y;
 
-        // interpolação necessária pra suavização, factor sendo a distância que o inimigo percorre nesse frame
-        float factor = smoothing * dt;
-        // evita ultrapassar o alvo de uma vez só
-        if (factor > 1.0f) factor = 1.0f;
+            float factor = smoothing * dt;
+            if (factor > 1.0f) factor = 1.0f;
 
-        enemies[i].position.y += toTarget * factor;
+            enemies[i].position.y += toTarget * factor;
 
-        // quando a diferença for menor que 0.5 pixels, para direto
-        if (fabsf(enemies[i].targetY - enemies[i].position.y) <= 0.5f) {
-            enemies[i].position.y = enemies[i].targetY;
-            enemies[i].stopped = true;
-            enemies[i].speed.y = 0.0f;
+            if (fabsf(enemies[i].targetY - enemies[i].position.y) <= 0.5f) {
+                enemies[i].position.y = enemies[i].targetY;
+                enemies[i].stopped = true;
+                enemies[i].speed.y = 0.0f;
+                enemies[i].motionTimer = 0.0f;
+            }
+        } else {
+            enemies[i].motionTimer += dt;
+            float t = enemies[i].motionTimer;
+
+            if (enemies[i].type == 0) {
+                float amp = enemies[i].wiggleAmp;
+                float freq = enemies[i].wiggleFreq;
+                float mainOsc = sinf(t * freq + enemies[i].wigglePhase) * amp;
+                float noise = sinf(t * (freq * 1.73f) + enemies[i].wigglePhase * 1.31f) * (amp * 0.25f);
+                float targetX = enemies[i].homeX + mainOsc + noise;
+
+                const float xSmooth = 8.0f;
+                enemies[i].position.x += (targetX - enemies[i].position.x) * fminf(dt * xSmooth, 1.0f);
+
+                float maxOff = amp * 1.5f;
+                if (enemies[i].position.x > enemies[i].homeX + maxOff) enemies[i].position.x = enemies[i].homeX + maxOff;
+                if (enemies[i].position.x < enemies[i].homeX - maxOff) enemies[i].position.x = enemies[i].homeX - maxOff;
+            }
+            else if (enemies[i].type == 1) {
+                float ampX = enemies[i].wiggleAmp;
+                float ampY = enemies[i].wiggleAmp * 0.6f;
+                float freq = enemies[i].wiggleFreq;
+                float phase = enemies[i].wigglePhase;
+
+                float ox = cosf(t * freq + phase) * ampX;
+                float oy = fabsf(sinf(t * freq + phase)) * ampY;
+
+                float targetX = enemies[i].homeX + ox;
+                float targetY = enemies[i].targetY + oy;
+
+                const float smooth = 6.0f;
+                enemies[i].position.x += (targetX - enemies[i].position.x) * fminf(dt * smooth, 1.0f);
+                enemies[i].position.y += (targetY - enemies[i].position.y) * fminf(dt * smooth, 1.0f);
+            }
         }
     }
 
@@ -163,13 +225,11 @@ void Enemies_Update(void) {
             int nextWave = g_currentWave + 1;
             int candidate = 2 * nextWave - 1;
             if (candidate > 9) {
-                // se a ultima wave foi a ultima, passa para o modo infinito
                 if (g_enemiesThisWave == 9) {
                     g_infinite = true;
                     nextDesired = GetRandomValue(1, 9);
                     g_currentWave = nextWave;
                 } else {
-                    // cap to 9 for this next wave
                     nextDesired = 9;
                     g_currentWave = nextWave;
                 }
@@ -200,7 +260,6 @@ bool Enemies_CheckHit(Vector2 pos, float radius) {
             enemies[i].hp -= 1;
             if (enemies[i].hp <= 0) {
                 enemies[i].active = false;
-                // free spawn cell if this enemy had one
                 if (enemies[i].spawnRow >= 0 && enemies[i].spawnCol >= 0) {
                     int sr = enemies[i].spawnRow;
                     int sc = enemies[i].spawnCol;
@@ -215,15 +274,18 @@ bool Enemies_CheckHit(Vector2 pos, float radius) {
     return false;
 }
 
-void Enemies_Draw(Texture2D enemySprite) {
+void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite) {
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].active) continue;
 
-        Rectangle source = { 0, 0, enemySprite.width, enemySprite.height };
-        Rectangle dest = { enemies[i].position.x, enemies[i].position.y, enemySprite.width * scale, enemySprite.height * scale };
-        Vector2 origin = { (enemySprite.width * scale) / 2.0f, (enemySprite.height * scale) / 2.0f };
+        Texture2D currentSprite = (enemies[i].type == 1) ? scoutSprite : enemySprite;
+        Color tint = (enemies[i].type == 1) ? WHITE : enemies[i].color;
 
-        DrawTexturePro(enemySprite, source, dest, origin, 0.0f, enemies[i].color);
+        Rectangle source = { 0, 0, (float)currentSprite.width, (float)currentSprite.height };
+        Rectangle dest = { enemies[i].position.x, enemies[i].position.y, currentSprite.width * scale, currentSprite.height * scale };
+        Vector2 origin = { (currentSprite.width * scale) / 2.0f, (currentSprite.height * scale) / 2.0f };
+
+        DrawTexturePro(currentSprite, source, dest, origin, 0.0f, tint);
     }
 }
 

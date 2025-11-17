@@ -1,10 +1,10 @@
 param()
 
-# Pure PowerShell build script for the project (replaces build.bat)
-# - Looks for RAYLIB env var
-# - Detects w64devkit if available and picks x86_64-w64-mingw32-gcc
-# - Adds libexec dir (where cc1.exe lives) to PATH if found
-# - Compiles main.c + src/player.c and links raylib
+# Script de build em PowerShell para o projeto (substitui build.bat)
+# - Procura pela variável de ambiente RAYLIB
+# - Detecta w64devkit se disponível e usa x86_64-w64-mingw32-gcc
+# - Adiciona o diretório libexec (onde cc1.exe pode estar) ao PATH se encontrado
+# - Compila main.c + src/player.c e linka com raylib
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $projectRoot = Resolve-Path (Join-Path $scriptDir "..")
@@ -16,7 +16,7 @@ if (-not $env:RAYLIB) {
 
 $ray = $env:RAYLIB
 
-# Candidate w64devkit roots
+# Candidatos a raízes do w64devkit
 $candidates = @()
 if ($env:W64DEVKIT) { $candidates += $env:W64DEVKIT }
 $candidates += Join-Path $ray 'w64devkit'
@@ -27,7 +27,7 @@ foreach ($c in $candidates) {
     if (Test-Path $c) { $w64root = (Resolve-Path $c).Path; break }
 }
 
-# Find compiler
+# Localiza o compilador
 $compiler = $null
 if ($w64root) {
     $candidate1 = Join-Path $w64root 'bin\\x86_64-w64-mingw32-gcc.exe'
@@ -37,7 +37,7 @@ if ($w64root) {
 }
 
 if (-not $compiler) {
-    # fallback: check common paths under RAY and PATH
+    # fallback: verifica caminhos comuns sob RAY e PATH
     $try1 = Join-Path $ray 'w64devkit\\bin\\x86_64-w64-mingw32-gcc.exe'
     $try2 = Join-Path $ray 'w64devkit\\bin\\gcc.exe'
     if (Test-Path $try1) { $compiler = $try1 }
@@ -59,7 +59,7 @@ if (-not $compiler) {
 
 Write-Host "Using compiler: $compiler"
 
-# If w64root exists, try to find libexec/cc1 and add it to PATH
+# Se w64root existir, tenta encontrar libexec/cc1 e adicioná-lo ao PATH
 if ($w64root) {
     $cc1 = Get-ChildItem -Path $w64root -Filter cc1.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($cc1) {
@@ -72,7 +72,7 @@ if ($w64root) {
     }
 }
 
-# Paths
+# Caminhos
 $main = Join-Path $projectRoot 'main.c'
 $player = Join-Path $projectRoot 'src\\player.c'
 $enemy = Join-Path $projectRoot 'src\\enemy.c'
@@ -82,9 +82,9 @@ $out = Join-Path $projectRoot 'main.exe'
 $include = Join-Path $projectRoot 'include'
 $gui = Join-Path $projectRoot 'src\\gui.c'
 
-# Build args
+# Argumentos de compilação
 $args = @($main, $player, $enemy, $projectile, '-o', $out, '-I', (Join-Path $ray 'raylib\\src'), '-I', $include, '-L', (Join-Path $ray 'raylib\\src'), '-lraylib', '-lopengl32', '-lgdi32', '-lwinmm', '-static-libgcc', '-static-libstdc++')
-# assemble sources and add gui.c if present
+ # monta as fontes e adiciona gui.c se presente
  $sources = @($main, $player, $enemy, $projectile)
 if (Test-Path $game) { $sources += $game }
 if (Test-Path $gui) { $sources += $gui }
@@ -92,6 +92,32 @@ if (Test-Path $gui) { $sources += $gui }
 $args = $sources + @('-o', $out, '-I', (Join-Path $ray 'raylib\\src'), '-I', $include, '-L', (Join-Path $ray 'raylib\\src'), '-lraylib', '-lopengl32', '-lgdi32', '-lwinmm', '-static-libgcc', '-static-libstdc++')
 
 Write-Host "Compiling: $($args -join ' ')"
+
+# Se o executável já existe, tenta removê-lo primeiro para evitar "Permission denied" do linker
+# Se um processo `main` estiver em execução, tenta finalizá-lo para que o linker possa escrever o output
+$running = Get-Process -Name main -ErrorAction SilentlyContinue
+if ($running) {
+    Write-Host "Found running 'main' process(es). Attempting to stop them..."
+    foreach ($p in $running) {
+        try {
+            Stop-Process -Id $p.Id -Force -ErrorAction Stop
+            Write-Host "Stopped process Id $($p.Id)"
+        } catch {
+            Write-Host "Could not stop process Id $($p.Id): $($_.Exception.Message)"
+        }
+    }
+}
+
+# Tenta remover o arquivo de saída existente se presente
+if (Test-Path $out) {
+    try {
+        Remove-Item $out -Force -ErrorAction Stop
+        Write-Host "Removed existing output: $out"
+    } catch {
+        Write-Error "Cannot remove existing output $out. Ensure the program is not running and you have permission to delete it. Close the running executable and try again."
+        exit 1
+    }
+}
 
 & $compiler @args
 $code = $LASTEXITCODE

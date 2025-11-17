@@ -43,6 +43,8 @@ void Projectiles_Spawn(Vector2 pos, Vector2 vel, float radius, int damage, Color
             g_pool[i].color = color;
             g_pool[i].homingSpeed = homingSpeed;
             g_pool[i].willHome = (homingSpeed > 0.0001f);
+            g_pool[i].visualType = 0;
+            g_pool[i].flipSprite = false;
             break;
         }
     }
@@ -66,23 +68,57 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
         {
             const float sideOffset = 12.0f;
             const float speed = 380.0f;
-            const float radius = 4.0f;
+            const float radius = 8.0f;
             const int damage = 1;
             const float life = 5.0f;
 
-            // spawna um pouco parra os lados no delay
             const float delay = 0.5f;
             const float sideSlideSpeed = 80.0f;
 
             Vector2 spawnL = pos;
             spawnL.x -= sideOffset;
             Vector2 initVelL = { -sideSlideSpeed, 0.0f };
-            Projectiles_Spawn(spawnL, initVelL, radius, damage, RED, life, delay, speed);
+            
+            if (!g_pool) return;
+            for (int i = 0; i < g_poolSize; i++) {
+                if (!g_pool[i].active) {
+                    g_pool[i].active = true;
+                    g_pool[i].position = spawnL;
+                    g_pool[i].velocity = initVelL;
+                    g_pool[i].radius = radius;
+                    g_pool[i].life = life;
+                    g_pool[i].age = -fabsf(delay);
+                    g_pool[i].damage = damage;
+                    g_pool[i].color = WHITE;
+                    g_pool[i].homingSpeed = speed;
+                    g_pool[i].willHome = true;
+                    g_pool[i].visualType = 1;
+                    g_pool[i].flipSprite = true;
+                    break;
+                }
+            }
 
             Vector2 spawnR = pos;
             spawnR.x += sideOffset;
             Vector2 initVelR = { sideSlideSpeed, 0.0f };
-            Projectiles_Spawn(spawnR, initVelR, radius, damage, RED, life, delay, speed);
+            
+            for (int i = 0; i < g_poolSize; i++) {
+                if (!g_pool[i].active) {
+                    g_pool[i].active = true;
+                    g_pool[i].position = spawnR;
+                    g_pool[i].velocity = initVelR;
+                    g_pool[i].radius = radius;
+                    g_pool[i].life = life;
+                    g_pool[i].age = -fabsf(delay);
+                    g_pool[i].damage = damage;
+                    g_pool[i].color = WHITE;
+                    g_pool[i].homingSpeed = speed;
+                    g_pool[i].willHome = true;
+                    g_pool[i].visualType = 1;
+                    g_pool[i].flipSprite = false;
+                    break;
+                }
+            }
 
             break;
         }
@@ -102,7 +138,6 @@ void Projectiles_Update(float dt)
 
         float prevAge = b->age;
         b->age += dt;
-        // se acabou de ativar (prevAge < 0 && age >= 0) e tem homing, recalcula direção
         if (prevAge < 0.0f && b->age >= 0.0f) {
             if (b->willHome && b->homingSpeed > 0.0001f) {
                 Vector2 dir = { g_playerPos.x - b->position.x, g_playerPos.y - b->position.y };
@@ -117,17 +152,14 @@ void Projectiles_Update(float dt)
             }
         }
 
-        // se ainda estiver no delay (age < 0), move apenas com a velocidade inicial (side slide)
         if (b->age >= 0.0f) {
             b->position.x += b->velocity.x * dt;
             b->position.y += b->velocity.y * dt;
         } else {
-            // antes de ativar vai para o lado um pouco
             b->position.x += b->velocity.x * dt;
             b->position.y += b->velocity.y * dt;
         }
 
-        // desativa se já passou do tempo de vida após ativação, ou saiu da tela
         if (b->age >= b->life || b->position.y > screenH + 100 || b->position.y < -100 || b->position.x < -200 || b->position.x > screenW + 200) {
             b->active = false;
         }
@@ -141,6 +173,42 @@ void Projectiles_Draw(void)
         Projectile *b = &g_pool[i];
         if (!b->active) continue;
         DrawCircleV(b->position, b->radius, b->color);
+    }
+}
+
+void Projectiles_DrawWithSprite(Texture2D spikeSprite)
+{
+    if (!g_pool) return;
+    for (int i = 0; i < g_poolSize; i++) {
+        Projectile *b = &g_pool[i];
+        if (!b->active) continue;
+        
+        if (b->visualType == 0) {
+            DrawCircleV(b->position, b->radius, b->color);
+        } else if (b->visualType == 1) {
+            float angle = atan2f(b->velocity.y, b->velocity.x) * RAD2DEG;
+            
+            float scale = 2.0f;
+            Rectangle source = { 0, 0, (float)spikeSprite.width, (float)spikeSprite.height };
+            
+            if (b->flipSprite) {
+                source.width = -(float)spikeSprite.width;
+            }
+            
+            Rectangle dest = { 
+                b->position.x, 
+                b->position.y, 
+                fabsf(source.width) * scale, 
+                spikeSprite.height * scale 
+            };
+            
+            Vector2 origin = { 
+                fabsf(source.width) * scale / 2.0f, 
+                spikeSprite.height * scale / 2.0f 
+            };
+            
+            DrawTexturePro(spikeSprite, source, dest, origin, angle, b->color);
+        }
     }
 }
 

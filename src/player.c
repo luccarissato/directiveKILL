@@ -3,6 +3,7 @@
 #include "../include/player.h"
 #include "raylib.h"
 #include <string.h>
+#include <math.h>
 #include "../include/enemy.h"
 
 #define PLAYER_MAX_SHOTS 50
@@ -88,24 +89,36 @@ int Player_GetHealth(void) {
 	return health;
 }
 
-void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float playerSpeed, int screenWidth, int screenHeight)
+void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float playerSpeed, float leftBound, float rightBound, float topBound, float bottomBound)
 {
-	if (IsKeyDown(KEY_W)) playerPosition->y -= playerSpeed;
-	if (IsKeyDown(KEY_A)) playerPosition->x -= playerSpeed;
-	if (IsKeyDown(KEY_S)) playerPosition->y += playerSpeed;
-	if (IsKeyDown(KEY_D)) playerPosition->x += playerSpeed;
+	Vector2 movement = { 0.0f, 0.0f };
+    
+	if (IsKeyDown(KEY_W)) movement.y -= 1.0f;
+	if (IsKeyDown(KEY_A)) movement.x -= 1.0f;
+	if (IsKeyDown(KEY_S)) movement.y += 1.0f;
+	if (IsKeyDown(KEY_D)) movement.x += 1.0f;
 
-	if (playerPosition->x - playerRadius < -playerRadius / 2)
-		playerPosition->x = -playerRadius / 2 + playerRadius;
+	// Normaliza o vetor de movimento para manter velocidade constante em diagonais
+	float length = sqrtf(movement.x * movement.x + movement.y * movement.y);
+	if (length > 0.0f) {
+		movement.x = (movement.x / length) * playerSpeed;
+		movement.y = (movement.y / length) * playerSpeed;
+        
+		playerPosition->x += movement.x;
+		playerPosition->y += movement.y;
+	}
 
-	if (playerPosition->x + playerRadius > screenWidth + playerRadius / 2)
-		playerPosition->x = screenWidth + playerRadius / 2 - playerRadius;
+	if (playerPosition->x - playerRadius < leftBound)
+		playerPosition->x = leftBound + playerRadius;
 
-	if (playerPosition->y - playerRadius < 350)
-		playerPosition->y = 350 + playerRadius;
+	if (playerPosition->x + playerRadius > rightBound)
+		playerPosition->x = rightBound - playerRadius;
 
-	if (playerPosition->y + playerRadius > screenHeight + playerRadius / 2)
-		playerPosition->y = screenHeight + playerRadius / 2 - playerRadius;
+	if (playerPosition->y - playerRadius < topBound)
+		playerPosition->y = topBound + playerRadius;
+
+	if (playerPosition->y + playerRadius > bottomBound)
+		playerPosition->y = bottomBound - playerRadius;
 }
 
 void Player_HandleShooting(float delta, Vector2 playerPosition)
@@ -126,7 +139,7 @@ void Player_HandleShooting(float delta, Vector2 playerPosition)
 			for (int i = 0; i < PLAYER_MAX_SHOTS; i++) {
 				if (!shoot[i].active) {
 					shoot[i].position = (Vector2){ playerPosition.x, playerPosition.y };
-					shoot[i].speed = (Vector2){ 0.0f, -500.0f };
+					shoot[i].speed = (Vector2){ 0.0f, -700.0f };
 					shoot[i].lifeSpawn = 2600;
 					shoot[i].radius = 4.0f;
 					shoot[i].color = RAYWHITE;
