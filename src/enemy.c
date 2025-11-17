@@ -39,6 +39,9 @@ static float g_waveTimer = 0.0f;
 static const float g_waveTimeout = 30.0f;
 static float g_stopY = 120.0f;
 static bool g_infinite = false;
+// limites horizontais da área de jogo para spawn e movimentação
+static float g_playLeft = 0.0f;
+static float g_playRight = 0.0f;
 
 static void SpawnWave(int count) {
     if (count > MAX_ENEMIES) count = MAX_ENEMIES;
@@ -80,12 +83,16 @@ static void SpawnWave(int count) {
         int tmp = freeCols[k]; freeCols[k] = freeCols[r]; freeCols[r] = tmp;
     }
 
-    float cellX = (float)screenW / (cols + 1);
+    float playLeft = 0.0f;
+    float playRight = (float)screenW;
+    if (g_playRight > g_playLeft) { playLeft = g_playLeft; playRight = g_playRight; }
+    float playWidth = playRight - playLeft;
+    float cellX = playWidth / (cols + 1);
 
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (i < spawnCount) {
             int col = freeCols[i];
-            float px = cellX * (col + 1);
+            float px = playLeft + cellX * (col + 1);
             int spawnY = -GetRandomValue(16, 48);
             enemies[i].position = (Vector2){ px, (float)spawnY };
             // velocidade inicial para descer
@@ -122,6 +129,12 @@ static void SpawnWave(int count) {
             enemies[i].spawnCol = -1;
         }
     }
+}
+
+void Enemies_SetPlayArea(float leftX, float rightX) {
+    if (rightX <= leftX) return;
+    g_playLeft = leftX;
+    g_playRight = rightX;
 }
 
 int Enemies_GetCurrentWave(void) {

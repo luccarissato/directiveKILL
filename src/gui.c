@@ -1,6 +1,7 @@
 #include "gui.h"
 #include "raylib.h"
 #include "../include/game.h"
+#include <stdio.h>
 #include <math.h>
 
 static int menuSelection = 0;
@@ -13,6 +14,8 @@ static Texture2D menuChoice3;
 static Texture2D health;
 static Texture2D scoreMenu;
 static Texture2D gameOverImg;
+static Texture2D guiBackground;
+static Texture2D guiOverlay;
 static const int optionX = 360;
 static const int optionStartY = 210;
 static const int optionSpacing = 60; 
@@ -26,6 +29,8 @@ void GUI_Init(void) {
     health = LoadTexture("assets/GUI/Elements/Crystal_Heath.png");
     scoreMenu = LoadTexture("assets/GUI/score_Menu.png");
     gameOverImg = LoadTexture("assets/GUI/game_over.png");
+    guiBackground = LoadTexture("assets/GUI/GUI_background.png");
+    guiOverlay = LoadTexture("assets/GUI/GUI.png");
     menuSelection = 0;
 }
 
@@ -153,9 +158,43 @@ void Gui_Draw(GuiState state, int playerLives) {
         }
 
         case GUI_STATE_GAME: {
-            int fontSize = GUI_GetScaledFontSize(20);
-            int margin = (int)(10 * GUI_GetScale());
-            DrawText(TextFormat("Lives: %d", playerLives), margin, margin, fontSize, RAYWHITE);
+            // Desenha GUI background e overlay e elementos dentro das barras
+            int sw = GetScreenWidth();
+            int sh = GetScreenHeight();
+
+            // background (fit)
+            if (guiBackground.width > 0 && guiBackground.height > 0) {
+                float bgScale = fminf((float)sw / (float)guiBackground.width, (float)sh / (float)guiBackground.height);
+                float bgW = guiBackground.width * bgScale;
+                float bgH = guiBackground.height * bgScale;
+                float bgX = ((float)sw - bgW) / 2.0f;
+                float bgY = ((float)sh - bgH) / 2.0f;
+                Rectangle src = {0,0, (float)guiBackground.width, (float)guiBackground.height};
+                Rectangle dst = {bgX, bgY, bgW, bgH};
+                Vector2 orig = {0,0};
+                DrawTexturePro(guiBackground, src, dst, orig, 0.0f, WHITE);
+            }
+
+            // overlay
+            Rectangle overlay; GUI_GetOverlayDest(&overlay);
+            Rectangle srcO = {0,0, (float)guiOverlay.width, (float)guiOverlay.height};
+            Vector2 origO = {0,0};
+            DrawTexturePro(guiOverlay, srcO, overlay, origO, 0.0f, WHITE);
+
+            // calcula a área de jogo dentro das barras
+            Rectangle playArea; GUI_GetPlayArea(&playArea);
+
+            // (crystals drawn below using overlay-based bar width)
+
+            // Desenha o score sob o rótulo SCORE dentro da barra direita (posição aproximada)
+            int fontSize = GUI_GetScaledFontSize(18);
+            // right bar area
+            float rightBarX = playArea.x + playArea.width + 10.0f;
+            // score Y position a little below overlay top + some offset
+            float scoreY = overlay.y + 60.0f;
+            int score = Game_GetScore();
+            DrawText(TextFormat("%d", score), (int)rightBarX, (int)scoreY, fontSize, RAYWHITE);
+
             break;
         }
 
@@ -301,4 +340,182 @@ void Gui_Unload(void) {
     UnloadTexture(health);
     UnloadTexture(scoreMenu);
     UnloadTexture(gameOverImg);
+    UnloadTexture(guiBackground);
+    UnloadTexture(guiOverlay);
+}
+
+// Calcula o retângulo destino usado ao desenhar o overlay da GUI centralizado e ajustado à tela.
+void GUI_GetOverlayDest(Rectangle *outDest) {
+    if (!outDest) return;
+    int sw = GetScreenWidth();
+    int sh = GetScreenHeight();
+    if (guiOverlay.width > 0 && guiOverlay.height > 0) {
+        float scale = fminf((float)sw / (float)guiOverlay.width, (float)sh / (float)guiOverlay.height);
+        float w = guiOverlay.width * scale;
+        float h = guiOverlay.height * scale;
+        float x = ((float)sw - w) / 2.0f;
+        float y = ((float)sh - h) / 2.0f;
+        outDest->x = x; outDest->y = y; outDest->width = w; outDest->height = h;
+        return;
+    }
+    outDest->x = 0; outDest->y = 0; outDest->width = sw; outDest->height = sh;
+}
+
+// Calcula o retângulo destino usado ao desenhar o background da GUI centralizado e ajustado à tela.
+void GUI_GetBackgroundDest(Rectangle *outDest) {
+    if (!outDest) return;
+    int sw = GetScreenWidth();
+    int sh = GetScreenHeight();
+    if (guiBackground.width > 0 && guiBackground.height > 0) {
+        float scale = fminf((float)sw / (float)guiBackground.width, (float)sh / (float)guiBackground.height);
+        float w = guiBackground.width * scale;
+        float h = guiBackground.height * scale;
+        float x = ((float)sw - w) / 2.0f;
+        float y = ((float)sh - h) / 2.0f;
+        outDest->x = x; outDest->y = y; outDest->width = w; outDest->height = h;
+        return;
+    }
+    outDest->x = 0; outDest->y = 0; outDest->width = sw; outDest->height = sh;
+}
+
+// Calcula a área jogável dentro das barras do overlay da GUI. Tratamos uma fração da largura
+// do overlay como pilares esquerdo/direito. A área interna exclui esses pilares.
+void GUI_GetPlayArea(Rectangle *outArea) {
+    Rectangle dest = {0,0, (float)GetScreenWidth(), (float)GetScreenHeight()};
+    // Prefer GUI background area if available so spawn/movement are constrained to background
+    if (guiBackground.width > 0 && guiBackground.height > 0) {
+        GUI_GetBackgroundDest(&dest);
+    } else {
+        GUI_GetOverlayDest(&dest);
+    }
+    // fraction representing bar width relative to overlay width (tweakable)
+    const float baseBarFrac = 0.12f;
+    const float barFrac = baseBarFrac * 2.0f; // doubled to match debug/visual bar width
+    // small inward shifts (scaled). Left moved further 4px, right moved further 8px.
+    float baseShift = 4.0f * GUI_GetScale();
+    // increase both pillars inward by additional 5 pixels (scaled)
+    float extra = 5.0f * GUI_GetScale();
+    float leftShift = baseShift * 2.0f + extra;   // ~8px + 5px scaled
+    float rightShift = baseShift * 3.0f + extra;  // ~12px + 5px scaled
+    float left = dest.x + dest.width * barFrac + leftShift;
+    float right = dest.x + dest.width * (1.0f - barFrac) - rightShift;
+    float top = dest.y;
+    float bottom = dest.y + dest.height;
+    if (outArea) {
+        outArea->x = left;
+        outArea->y = top;
+        outArea->width = right - left;
+        outArea->height = bottom - top;
+    }
+}
+
+// Desenha apenas o plano de fundo (será desenhado antes do jogador e dos inimigos)
+void GUI_DrawBackground(void) {
+    int sw = GetScreenWidth();
+    int sh = GetScreenHeight();
+    if (guiBackground.width > 0 && guiBackground.height > 0) {
+        float bgScale = fminf((float)sw / (float)guiBackground.width, (float)sh / (float)guiBackground.height);
+        float bgW = guiBackground.width * bgScale;
+        float bgH = guiBackground.height * bgScale;
+        float bgX = ((float)sw - bgW) / 2.0f;
+        float bgY = ((float)sh - bgH) / 2.0f;
+        Rectangle src = {0,0, (float)guiBackground.width, (float)guiBackground.height};
+        Rectangle dst = {bgX, bgY, bgW, bgH};
+        Vector2 orig = {0,0};
+        DrawTexturePro(guiBackground, src, dst, orig, 0.0f, WHITE);
+    }
+}
+
+// Desenha o overlay (barras, vidas, score) sobre os objetos do jogo
+void GUI_DrawOverlay(int playerLives) {
+    // overlay
+    Rectangle overlay; GUI_GetOverlayDest(&overlay);
+    Rectangle srcO = {0,0, (float)guiOverlay.width, (float)guiOverlay.height};
+    Vector2 origO = {0,0};
+    DrawTexturePro(guiOverlay, srcO, overlay, origO, 0.0f, WHITE);
+
+    // calcula a área de jogo dentro das barras
+    Rectangle playArea; GUI_GetPlayArea(&playArea);
+    // Visual do bloqueador de movimento removido (colisão ainda aplicada via limites de playArea)
+    const float baseBarFrac = 0.12f; // must match GUI_GetPlayArea base
+    const float barFrac = baseBarFrac * 2.0f; // doubled to match debug/visual request
+    // asymmetric inward shifts (scaled): left and right moved differently toward center
+    float baseShift = 4.0f * GUI_GetScale();
+    float extra = 5.0f * GUI_GetScale();
+    float leftShift = baseShift * 2.0f + extra;   // ~8px + 5px scaled
+    float rightShift = baseShift * 3.0f + extra;  // ~12px + 5px scaled
+    // calcula larguras das barras esquerda/direita com base no overlay (consistente com GUI_GetPlayArea)
+    float leftBarWidth = overlay.width * barFrac;
+    float rightBarWidth = overlay.width * barFrac;
+
+    // Desenha vidas como cristais dentro da barra esquerda (espalhados horizontalmente, tamanho aumentado)
+    if (health.width > 0 && health.height > 0) {
+        // calcula escala para que os ícones caibam na largura da barra (com algum padding)
+        float maxIconW = (leftBarWidth - 16.0f) / (float)fmaxf(1, playerLives);
+        float baseScale = maxIconW / (float)health.width;
+        if (baseScale > 2.0f) baseScale = 2.0f; // cap scale to ~2x
+        if (baseScale < 0.2f) baseScale = 0.2f;
+        float iconW = health.width * baseScale;
+        float iconH = health.height * baseScale;
+        // Aumenta o tamanho visual dos cristais conforme solicitado
+        iconW *= 1.5f;
+        iconH *= 1.5f;
+
+        // início X centralizado na barra esquerda (overlay.x + leftShift + leftBarWidth/2)
+        float leftBarXCenter = overlay.x + leftShift + leftBarWidth / 2.0f;
+        float totalWidth = playerLives * iconW + (playerLives - 1) * 6.0f;
+        float startX = leftBarXCenter - totalWidth / 2.0f;
+        float extraY = 24.0f * GUI_GetScale();
+        float y = overlay.y + 16.0f + extraY; // moved down to avoid overlapping header
+
+        for (int i = 0; i < playerLives; i++) {
+            float ix = startX + i * (iconW + 6.0f);
+            Rectangle dst = { ix, y, iconW, iconH };
+            Vector2 o = { iconW/2.0f, iconH/2.0f };
+            DrawTexturePro(health, (Rectangle){0,0,(float)health.width,(float)health.height}, dst, o, 0.0f, WHITE);
+        }
+    }
+
+    // Desenha o score sob o rótulo SCORE dentro da barra direita (centralizado e um pouco mais abaixo)
+    int fontSize = GUI_GetScaledFontSize(18);
+    float rightBarCenterX = overlay.x + overlay.width - rightShift - rightBarWidth / 2.0f;
+    float scoreY = overlay.y + overlay.height * 0.15f; // move down a bit
+    int score = Game_GetScore();
+    char scoreBuf[64];
+    snprintf(scoreBuf, sizeof(scoreBuf), "%d", score);
+    int textW = MeasureText(scoreBuf, fontSize);
+    // antes o número era deslocado um pouco para a esquerda; agora reduzimos esse deslocamento para aproximar à direita
+    float nudge = 4.0f * GUI_GetScale();
+    DrawText(scoreBuf, (int)(rightBarCenterX - textW / 2.0f - nudge), (int)scoreY, fontSize, RAYWHITE);
+}
+
+// Desenha retângulos semi-transparente para depuração e alinhamento do background/overlay/área de jogo
+void GUI_DrawDebugOverlay(void) {
+    Rectangle overlay; GUI_GetOverlayDest(&overlay);
+    const float barFrac = 0.12f;
+    // dobra a largura lateral das barras para visualização de depuração (solicitado pelo usuário)
+    const float adjFrac = barFrac * 2.0f;
+    // aplica os mesmos deslocamentos assimétricos para dentro usados pela área de jogo, assim as barras de depuração batem com as colisões
+    float baseShift = 4.0f * GUI_GetScale();
+    float extra = 5.0f * GUI_GetScale();
+    float leftShift = baseShift * 2.0f + extra;
+    float rightShift = baseShift * 3.0f + extra;
+    Rectangle leftBar = { overlay.x + leftShift, overlay.y, overlay.width * adjFrac, overlay.height };
+    Rectangle rightBar = { overlay.x + overlay.width * (1.0f - adjFrac) - rightShift, overlay.y, overlay.width * adjFrac, overlay.height };
+    Rectangle playArea; GUI_GetPlayArea(&playArea);
+
+    // preenchimentos semi-transparente
+    Color leftFill = (Color){ 255, 0, 0, 80 };
+    Color rightFill = (Color){ 0, 0, 255, 80 };
+    Color playFill = (Color){ 0, 255, 0, 60 };
+
+    DrawRectangleRec(leftBar, leftFill);
+    DrawRectangleRec(rightBar, rightFill);
+    DrawRectangleRec(playArea, playFill);
+
+    // outlines for clarity
+    Color outline = (Color){ 255, 255, 255, 180 };
+    DrawRectangleLinesEx(leftBar, 2.0f, outline);
+    DrawRectangleLinesEx(rightBar, 2.0f, outline);
+    DrawRectangleLinesEx(playArea, 2.0f, outline);
 }

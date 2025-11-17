@@ -89,10 +89,10 @@ int Player_GetHealth(void) {
 	return health;
 }
 
-void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float playerSpeed, int screenWidth, int screenHeight)
+void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float playerSpeed, float leftBound, float rightBound, float topBound, float bottomBound)
 {
 	Vector2 movement = { 0.0f, 0.0f };
-	
+    
 	if (IsKeyDown(KEY_W)) movement.y -= 1.0f;
 	if (IsKeyDown(KEY_A)) movement.x -= 1.0f;
 	if (IsKeyDown(KEY_S)) movement.y += 1.0f;
@@ -103,25 +103,23 @@ void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float pl
 	if (length > 0.0f) {
 		movement.x = (movement.x / length) * playerSpeed;
 		movement.y = (movement.y / length) * playerSpeed;
-		
+        
 		playerPosition->x += movement.x;
 		playerPosition->y += movement.y;
 	}
 
-	// Limite superior proporcional (aproximadamente 35% da altura)
-	float topLimit = screenHeight * 0.35f;
+	// aplica limites passados (left/right/top/bottom)
+	if (playerPosition->x - playerRadius < leftBound)
+		playerPosition->x = leftBound + playerRadius;
 
-	if (playerPosition->x - playerRadius < -playerRadius / 2)
-		playerPosition->x = -playerRadius / 2 + playerRadius;
+	if (playerPosition->x + playerRadius > rightBound)
+		playerPosition->x = rightBound - playerRadius;
 
-	if (playerPosition->x + playerRadius > screenWidth + playerRadius / 2)
-		playerPosition->x = screenWidth + playerRadius / 2 - playerRadius;
+	if (playerPosition->y - playerRadius < topBound)
+		playerPosition->y = topBound + playerRadius;
 
-	if (playerPosition->y - playerRadius < topLimit)
-		playerPosition->y = topLimit + playerRadius;
-
-	if (playerPosition->y + playerRadius > screenHeight + playerRadius / 2)
-		playerPosition->y = screenHeight + playerRadius / 2 - playerRadius;
+	if (playerPosition->y + playerRadius > bottomBound)
+		playerPosition->y = bottomBound - playerRadius;
 }
 
 void Player_HandleShooting(float delta, Vector2 playerPosition)

@@ -14,11 +14,8 @@ void Game_Init(void) {
 }
 
 void Game_Update(float dt) {
-    g_accum += dt;
-    while (g_accum >= 1.0f) {
-        g_accum -= 1.0f;
-        if (g_score > 0) g_score -= 1; 
-    }
+    // Score no longer decays over time. Keep accumulator in case of future use.
+    (void)dt;
 }
 
 void Game_AddScore(int delta) {
