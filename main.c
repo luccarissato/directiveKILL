@@ -30,7 +30,7 @@ int main(void)
     Projectiles_Init(200);
 
     Vector2 playerPosition;
-    float playerRadius = 20.0f;
+    float playerRadius = 10.0f; // reduced by half
     float basePlayerSpeed = 200.0f; 
 
     Player_Init(); 
@@ -86,8 +86,8 @@ int main(void)
 
         case GUI_STATE_GAME:
         {
-            float scale = fminf((float)currentWidth / 800.0f, (float)currentHeight / 450.0f);
-            float playerSpeed = basePlayerSpeed * scale * delta;
+            float scale = GUI_GetScale();
+                float playerSpeed = basePlayerSpeed * scale * delta;
             
             float newStopY = currentHeight * enemiesStopYRatio;
             if (fabsf(newStopY - enemiesStopY) > 1.0f) {

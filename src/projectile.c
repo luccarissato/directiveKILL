@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "../include/gui.h"
 
 static Projectile *g_pool = NULL;
 static int g_poolSize = 0;
@@ -35,7 +36,7 @@ void Projectiles_Spawn(Vector2 pos, Vector2 vel, float radius, int damage, Color
             g_pool[i].active = true;
             g_pool[i].position = pos;
             g_pool[i].velocity = vel;
-            g_pool[i].radius = radius;
+            g_pool[i].radius = radius * GUI_GetScale();
             // age marca o tempo desde o spawn, se negativo é porque está em delay, life é o tempo ativo
             g_pool[i].life = lifeSec;
             g_pool[i].age = -fabsf(delaySec);
@@ -72,7 +73,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
         {
             const float sideOffset = 12.0f;
             const float speed = 380.0f;
-            const float radius = 8.0f;
+            const float radius = 2.0f; // reduced again by half
             const int damage = 1;
             const float life = 5.0f;
 
@@ -89,7 +90,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                     g_pool[i].active = true;
                     g_pool[i].position = spawnL;
                     g_pool[i].velocity = initVelL;
-                    g_pool[i].radius = radius;
+                    g_pool[i].radius = radius * GUI_GetScale();
                     g_pool[i].life = life;
                     g_pool[i].age = -fabsf(delay);
                     g_pool[i].damage = damage;
@@ -112,7 +113,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                     g_pool[i].active = true;
                     g_pool[i].position = spawnR;
                     g_pool[i].velocity = initVelR;
-                    g_pool[i].radius = radius;
+                    g_pool[i].radius = radius * GUI_GetScale();
                     g_pool[i].life = life;
                     g_pool[i].age = -fabsf(delay);
                     g_pool[i].damage = damage;
@@ -130,7 +131,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
         }
         case 2:
         {
-            const float radius = 10.0f;
+            const float radius = 2.5f; // reduced again by half
             const int damage = 1;
             const float life = 2.0f;
 
@@ -149,7 +150,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                         dir.x = 0.0f; dir.y = preSplitSpeed;
                     }
                     g_pool[i].velocity = dir;
-                    g_pool[i].radius = radius;
+                    g_pool[i].radius = radius * GUI_GetScale();
                     g_pool[i].life = life;
                     g_pool[i].age = 0.0f;
                     g_pool[i].damage = damage;
@@ -248,7 +249,7 @@ void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spikeSprite2)
         } else if (b->visualType == 1) {
             float angle = atan2f(b->velocity.y, b->velocity.x) * RAD2DEG;
             
-            float scale = 2.0f;
+            float scale = 0.5f * GUI_GetScale(); // reduce sprite draw size by half again
             Rectangle source = { 0, 0, (float)spikeSprite.width, (float)spikeSprite.height };
             
             if (b->flipSprite) {
