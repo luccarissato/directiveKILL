@@ -72,11 +72,9 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
             const int damage = 1;
             const float life = 5.0f;
 
-            // spawna um pouco parra os lados no delay
             const float delay = 0.5f;
             const float sideSlideSpeed = 80.0f;
 
-            // Projétil da esquerda (flipado)
             Vector2 spawnL = pos;
             spawnL.x -= sideOffset;
             Vector2 initVelL = { -sideSlideSpeed, 0.0f };
@@ -95,12 +93,11 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                     g_pool[i].homingSpeed = speed;
                     g_pool[i].willHome = true;
                     g_pool[i].visualType = 1;
-                    g_pool[i].flipSprite = true; // Esquerda = flipado
+                    g_pool[i].flipSprite = true;
                     break;
                 }
             }
 
-            // Projétil da direita (normal)
             Vector2 spawnR = pos;
             spawnR.x += sideOffset;
             Vector2 initVelR = { sideSlideSpeed, 0.0f };
@@ -118,7 +115,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                     g_pool[i].homingSpeed = speed;
                     g_pool[i].willHome = true;
                     g_pool[i].visualType = 1;
-                    g_pool[i].flipSprite = false; // Direita = normal
+                    g_pool[i].flipSprite = false;
                     break;
                 }
             }
@@ -141,7 +138,6 @@ void Projectiles_Update(float dt)
 
         float prevAge = b->age;
         b->age += dt;
-        // se acabou de ativar (prevAge < 0 && age >= 0) e tem homing, recalcula direção
         if (prevAge < 0.0f && b->age >= 0.0f) {
             if (b->willHome && b->homingSpeed > 0.0001f) {
                 Vector2 dir = { g_playerPos.x - b->position.x, g_playerPos.y - b->position.y };
@@ -156,17 +152,14 @@ void Projectiles_Update(float dt)
             }
         }
 
-        // se ainda estiver no delay (age < 0), move apenas com a velocidade inicial (side slide)
         if (b->age >= 0.0f) {
             b->position.x += b->velocity.x * dt;
             b->position.y += b->velocity.y * dt;
         } else {
-            // antes de ativar vai para o lado um pouco
             b->position.x += b->velocity.x * dt;
             b->position.y += b->velocity.y * dt;
         }
 
-        // desativa se já passou do tempo de vida após ativação, ou saiu da tela
         if (b->age >= b->life || b->position.y > screenH + 100 || b->position.y < -100 || b->position.x < -200 || b->position.x > screenW + 200) {
             b->active = false;
         }
@@ -191,16 +184,13 @@ void Projectiles_DrawWithSprite(Texture2D spikeSprite)
         if (!b->active) continue;
         
         if (b->visualType == 0) {
-            // Desenha como círculo
             DrawCircleV(b->position, b->radius, b->color);
         } else if (b->visualType == 1) {
-            // Desenha spike com rotação
             float angle = atan2f(b->velocity.y, b->velocity.x) * RAD2DEG;
             
             float scale = 2.0f;
             Rectangle source = { 0, 0, (float)spikeSprite.width, (float)spikeSprite.height };
             
-            // Se flipSprite = true, inverte horizontalmente
             if (b->flipSprite) {
                 source.width = -(float)spikeSprite.width;
             }

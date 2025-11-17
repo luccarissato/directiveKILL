@@ -108,7 +108,6 @@ void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float pl
 		playerPosition->y += movement.y;
 	}
 
-	// aplica limites passados (left/right/top/bottom)
 	if (playerPosition->x - playerRadius < leftBound)
 		playerPosition->x = leftBound + playerRadius;
 
@@ -140,7 +139,7 @@ void Player_HandleShooting(float delta, Vector2 playerPosition)
 			for (int i = 0; i < PLAYER_MAX_SHOTS; i++) {
 				if (!shoot[i].active) {
 					shoot[i].position = (Vector2){ playerPosition.x, playerPosition.y };
-					shoot[i].speed = (Vector2){ 0.0f, -500.0f };
+					shoot[i].speed = (Vector2){ 0.0f, -700.0f };
 					shoot[i].lifeSpawn = 2600;
 					shoot[i].radius = 4.0f;
 					shoot[i].color = RAYWHITE;

@@ -14,8 +14,11 @@ void Game_Init(void) {
 }
 
 void Game_Update(float dt) {
-    // Score no longer decays over time. Keep accumulator in case of future use.
-    (void)dt;
+    g_accum += dt;
+    while (g_accum >= 1.0f) {
+        if (g_score > 0) g_score -= 1;
+        g_accum -= 1.0f;
+    }
 }
 
 void Game_AddScore(int delta) {
@@ -33,7 +36,6 @@ typedef struct ScoreNode {
     struct ScoreNode *next;
 } ScoreNode;
 
-// unsorted
 static ScoreNode* load_scores_from_file(const char *path) {
     FILE *f = fopen(path, "r");
     if (!f) return NULL;
@@ -61,7 +63,6 @@ static void free_scores(ScoreNode *head) {
     }
 }
 
-// sobrescreve
 static void write_scores_to_file(const char *path, ScoreNode *head) {
     FILE *f = fopen(path, "w");
     if (!f) return;
@@ -98,7 +99,6 @@ void Game_SaveScore(const char *name, int score) {
 }
 
 void Game_DrawScores(void) {
-    // Mantemos a função antiga chamando a nova com posição padrão
     Game_DrawScoresAt(120);
 }
 
@@ -143,7 +143,7 @@ void Game_DrawScoresAtScaled(int startY, int fontSize, int lineSpacing) {
     for (ScoreNode *t = head; t; t = t->next) count++;
     
     int sw = GetScreenWidth();
-    int margin = (int)(sw * 0.125f); // 12.5% da largura como margem
+    int margin = (int)(sw * 0.125f);
     if (margin < 10) margin = 10;
     
     if (count == 0) {

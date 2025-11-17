@@ -11,7 +11,6 @@
 
 int main(void)
 {   
-    // Obtém o tamanho do monitor e usa 70% para a janela
     int monitorWidth = GetMonitorWidth(0);
     int monitorHeight = GetMonitorHeight(0);
     const int screenWidth = (int)(monitorWidth * 0.7f);
@@ -24,20 +23,18 @@ int main(void)
     Texture2D enemySprite = LoadTexture("assets/textures/broken_ship.png");
     Texture2D scoutSprite = LoadTexture("assets/textures/scout.png");
     Texture2D spikeSprite = LoadTexture("assets/GUI/Elements/spike_proj.png");
-    float enemiesStopYRatio = 0.27f; // 27% da altura da janela
+    float enemiesStopYRatio = 0.27f;
 
     Projectiles_Init(200);
 
-    Vector2 playerPosition; // será posicionado dentro de playArea (metade inferior) após a inicialização da GUI
+    Vector2 playerPosition;
     float playerRadius = 20.0f;
-    float basePlayerSpeed = 200.0f; // Velocidade base em pixels por segundo
+    float basePlayerSpeed = 200.0f; 
 
     Player_Init(); 
     GUI_Init();
 
-    // calcula a área de jogo e inicializa inimigos dentro dela
     Rectangle playArea; GUI_GetPlayArea(&playArea);
-    // posiciona o jogador no centro da metade inferior
     playerPosition = (Vector2){ playArea.x + playArea.width / 2.0f, playArea.y + playArea.height * 0.75f };
     Enemies_SetPlayArea(playArea.x, playArea.x + playArea.width);
     float enemiesStopY = screenHeight * enemiesStopYRatio;
@@ -51,11 +48,9 @@ int main(void)
     float delta = GetFrameTime();
         GuiState prevGuiState = guiState;
         
-        // Atualiza dimensões da janela a cada frame
         int currentWidth = GetScreenWidth();
         int currentHeight = GetScreenHeight();
         
-        // Toggle fullscreen com Alt+Enter (não dispara confirmações porque Enter é ignorado quando Alt está pressionado)
         if ((IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) && IsKeyPressed(KEY_ENTER)) {
             ToggleFullscreen();
         }
@@ -76,9 +71,7 @@ int main(void)
 
             if (prevGuiState == GUI_STATE_MENU && guiState == GUI_STATE_GAME) {
                 Player_Reset();
-                // recalcula a área de jogo e reinicializa inimigos dentro dela
                 Rectangle playAreaNow; GUI_GetPlayArea(&playAreaNow);
-                // posiciona o jogador na metade inferior da área de jogo
                 playerPosition = (Vector2){ playAreaNow.x + playAreaNow.width / 2.0f, playAreaNow.y + playAreaNow.height * 0.75f };
                 Enemies_SetPlayArea(playAreaNow.x, playAreaNow.x + playAreaNow.width);
                 enemiesStopY = currentHeight * enemiesStopYRatio;
@@ -91,17 +84,14 @@ int main(void)
 
         case GUI_STATE_GAME:
         {
-            // Calcula velocidade proporcional ao tamanho da janela (pixels por segundo)
             float scale = fminf((float)currentWidth / 800.0f, (float)currentHeight / 450.0f);
-            float playerSpeed = basePlayerSpeed * scale * delta; // Multiplica por delta para pixels por frame
+            float playerSpeed = basePlayerSpeed * scale * delta;
             
-            // Atualiza stopY se a altura mudou
             float newStopY = currentHeight * enemiesStopYRatio;
             if (fabsf(newStopY - enemiesStopY) > 1.0f) {
                 enemiesStopY = newStopY;
                 Enemies_UpdateStopY(enemiesStopY);
             }
-            // Atualiza play area (repassa aos inimigos)
             Rectangle playAreaNow; GUI_GetPlayArea(&playAreaNow);
             Enemies_SetPlayArea(playAreaNow.x, playAreaNow.x + playAreaNow.width);
 
@@ -113,9 +103,7 @@ int main(void)
                 Enemies_ShootAll(playerPosition);
             }
 
-            // aplica movimentação do player dentro da área do GUI (barras esquerda/direita)
             Rectangle playArea; GUI_GetPlayArea(&playArea);
-            // restringe o jogador apenas à área inferior: topo bloqueado em 60%, jogador permitido na parte inferior 40%
             float allowedTop = playArea.y + playArea.height * 0.6f;
             Player_HandleMovement(&playerPosition, playerRadius, playerSpeed, playArea.x, playArea.x + playArea.width, allowedTop, playArea.y + playArea.height);
             Player_HandleShooting(delta, playerPosition);
@@ -123,7 +111,6 @@ int main(void)
 
             Game_Update(delta);
 
-            // desenha o background da GUI atrás do gameplay
             GUI_DrawBackground();
 
             Player_DrawShots();
@@ -144,17 +131,15 @@ int main(void)
             }
 
             int lives = Player_GetHealth();
-            // desenha o overlay da GUI (barras, vidas, score) por cima
             GUI_DrawOverlay(lives);
 
             int currentWave = Enemies_GetCurrentWave();
             int fontSize = GUI_GetScaledFontSize(18);
             int margin = (int)(10 * fminf((float)currentWidth / 800.0f, (float)currentHeight / 450.0f));
             if (margin < 5) margin = 5;
-            int extraWaveY = (int)(40.0f * scale); // move wave text further down as requested
+            int extraWaveY = (int)(40.0f * scale);
             DrawText(TextFormat("Wave: %d", currentWave), margin, margin + 24 + extraWaveY, fontSize, RAYWHITE);
 
-            // O score é mostrado no overlay direito; mantenha o lado esquerdo apenas para Wave/temporizador
 
             if (lives <= 0) {
                 guiState = GUI_STATE_GAMEOVER;

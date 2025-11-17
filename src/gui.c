@@ -34,10 +34,6 @@ void GUI_Init(void) {
     menuSelection = 0;
 }
 
-// Retorna a escala que deve ser aplicada para que a textura respeite a escala "da janela".
-// Se houver um background carregado, usamos a mesma escala do background (para manter
-// consistência com as imagens anteriores). Caso contrário, calculamos um "fit" da
-// textura na janela preservando proporção.
 static float GUI_GetWindowScale(const Texture2D tex) {
     int sw = GetScreenWidth();
     int sh = GetScreenHeight();
@@ -111,7 +107,6 @@ GuiState Gui_Update(GuiState currentState) {
 void Gui_Draw(GuiState state, int playerLives) {
     switch (state) {
         case GUI_STATE_MENU: {
-            // Desenha o fundo mantendo a proporção (fit) e centralizado. Assim o background não é distorcido.
             int sw = GetScreenWidth();
             int sh = GetScreenHeight();
             int bw = menuBackground.width;
@@ -120,7 +115,6 @@ void Gui_Draw(GuiState state, int playerLives) {
             float bgW = 0.0f, bgH = 0.0f;
             float bgX = 0.0f, bgY = 0.0f;
             if (bw > 0 && bh > 0) {
-                // escala para caber na janela (fit)
                 bgScale = fminf((float)sw / (float)bw, (float)sh / (float)bh);
                 bgW = bw * bgScale;
                 bgH = bh * bgScale;
@@ -133,18 +127,15 @@ void Gui_Draw(GuiState state, int playerLives) {
                 DrawTexturePro(menuBackground, src, dst, origin, 0.0f, WHITE);
             }
 
-            // Seleciona a textura da opção atual com base em `menuSelection` e escala proporcionalmente ao background
             Texture2D currentChoice = (menuSelection == 0) ? menuChoice1 : (menuSelection == 1 ? menuChoice2 : menuChoice3);
             if (currentChoice.width > 0 && currentChoice.height > 0) {
                 Rectangle srcC = { 0.0f, 0.0f, (float)currentChoice.width, (float)currentChoice.height };
                 Vector2 originC = { 0.0f, 0.0f };
-                // usa a escala baseada na janela (a mesma do background quando disponível)
                 float choiceScale = GUI_GetWindowScale(currentChoice);
                 if (bw > 0 && bh > 0) {
                     Rectangle dstC = { bgX, bgY, (float)currentChoice.width * choiceScale, (float)currentChoice.height * choiceScale };
                     DrawTexturePro(currentChoice, srcC, dstC, originC, 0.0f, WHITE);
                 } else {
-                    // fallback: desenha ajustado à janela (fit)
                     float dstW = (float)currentChoice.width * choiceScale;
                     float dstH = (float)currentChoice.height * choiceScale;
                     float drawX = ((float)GetScreenWidth() - dstW) / 2.0f;
@@ -153,16 +144,13 @@ void Gui_Draw(GuiState state, int playerLives) {
                     DrawTexturePro(currentChoice, srcC, dstC, originC, 0.0f, WHITE);
                 }
             }
-            // Sem texto sobreposto; pressionar W/S altera a imagem mostrada
             break;
         }
 
         case GUI_STATE_GAME: {
-            // Desenha GUI background e overlay e elementos dentro das barras
             int sw = GetScreenWidth();
             int sh = GetScreenHeight();
 
-            // background (fit)
             if (guiBackground.width > 0 && guiBackground.height > 0) {
                 float bgScale = fminf((float)sw / (float)guiBackground.width, (float)sh / (float)guiBackground.height);
                 float bgW = guiBackground.width * bgScale;
@@ -175,22 +163,16 @@ void Gui_Draw(GuiState state, int playerLives) {
                 DrawTexturePro(guiBackground, src, dst, orig, 0.0f, WHITE);
             }
 
-            // overlay
             Rectangle overlay; GUI_GetOverlayDest(&overlay);
             Rectangle srcO = {0,0, (float)guiOverlay.width, (float)guiOverlay.height};
             Vector2 origO = {0,0};
             DrawTexturePro(guiOverlay, srcO, overlay, origO, 0.0f, WHITE);
 
-            // calcula a área de jogo dentro das barras
             Rectangle playArea; GUI_GetPlayArea(&playArea);
 
-            // (crystals drawn below using overlay-based bar width)
 
-            // Desenha o score sob o rótulo SCORE dentro da barra direita (posição aproximada)
             int fontSize = GUI_GetScaledFontSize(18);
-            // right bar area
             float rightBarX = playArea.x + playArea.width + 10.0f;
-            // score Y position a little below overlay top + some offset
             float scoreY = overlay.y + 60.0f;
             int score = Game_GetScore();
             DrawText(TextFormat("%d", score), (int)rightBarX, (int)scoreY, fontSize, RAYWHITE);
@@ -214,26 +196,22 @@ void Gui_Draw(GuiState state, int playerLives) {
         }
 
         case GUI_STATE_GAMEOVER: {
-            // Desenha a imagem de Game Over no lugar do título textual
             int sw = GetScreenWidth();
             int sh = GetScreenHeight();
             int gw = gameOverImg.width;
             int gh = gameOverImg.height;
-            int y = GetScreenHeight() / 2 - 60; // mantém a mesma referência vertical usada anteriormente
+            int y = GetScreenHeight() / 2 - 60; 
             if (gw > 0 && gh > 0) {
-                // Desenha a imagem escalada de acordo com a janela (sem centralizar X)
                 float imgScale = GUI_GetWindowScale(gameOverImg);
                 float dstW = (float)gw * imgScale;
                 float dstH = (float)gh * imgScale;
-                float dstX = 20.0f; // margem esquerda fixa (não centraliza)
+                float dstX = 20.0f; 
                 float dstY = (float)y;
                 Rectangle src = { 0.0f, 0.0f, (float)gw, (float)gh };
                 Rectangle dst = { dstX, dstY, dstW, dstH };
                 Vector2 origin = { 0.0f, 0.0f };
                 DrawTexturePro(gameOverImg, src, dst, origin, 0.0f, WHITE);
 
-                // Ajusta as posições dos textos para ficarem abaixo da imagem escalada,
-                // centralizados em relação à largura da própria imagem.
                 Color exitCol = (menuSelection == 0) ? YELLOW : RAYWHITE;
                 Color saveCol = (menuSelection == 1) ? YELLOW : RAYWHITE;
                 const char *exitTxt = "Exit";
@@ -243,17 +221,14 @@ void Gui_Draw(GuiState state, int playerLives) {
                 int optOffsetY = 20;
                 int exitY = (int)(dstY + dstH + optOffsetY);
 
-                // Se as opções ficarem fora da tela por causa do tamanho da imagem,
-                // ajusta para um fallback próximo ao final da janela.
                 int shLocal = GetScreenHeight();
                 if (exitY + 40 > shLocal) {
-                    exitY = shLocal - 80; // posiciona acima do rodapé
+                    exitY = shLocal - 80; 
                 }
 
                 int exitX = (int)(dstX + dstW / 2.0f - (float)exitW / 2.0f);
                 int saveX = (int)(dstX + dstW / 2.0f - (float)saveW / 2.0f);
 
-                // Garante que as X fiquem dentro da janela
                 int swLocal = GetScreenWidth();
                 if (exitX < 10) exitX = 10;
                 if (saveX < 10) saveX = 10;
@@ -263,7 +238,6 @@ void Gui_Draw(GuiState state, int playerLives) {
                 DrawText(exitTxt, exitX, exitY, 20, exitCol);
                 DrawText(saveTxt, saveX, exitY + 36, 20, saveCol);
             } else {
-                // Fallback: se não houver imagem, desenha as opções centralizadas na tela
                 Color exitCol = (menuSelection == 0) ? YELLOW : RAYWHITE;
                 Color saveCol = (menuSelection == 1) ? YELLOW : RAYWHITE;
                 const char *exitTxt = "Exit";
@@ -281,7 +255,6 @@ void Gui_Draw(GuiState state, int playerLives) {
             break;
         }
         case GUI_STATE_SCORES: {
-            // Desenha a imagem `scoreMenu` escalada proporcionalmente à tela (fit) e centra no topo.
             int sw = GetScreenWidth();
             int sh = GetScreenHeight();
             int smw = scoreMenu.width;
@@ -289,20 +262,17 @@ void Gui_Draw(GuiState state, int playerLives) {
             float sScale = 1.0f;
             float dstW = 0.0f, dstH = 0.0f, dstX = 0.0f, dstY = 0.0f;
             if (smw > 0 && smh > 0) {
-                // Escala a imagem de acordo com a janela (mesma lógica usada para outras imagens)
                 float sScale = GUI_GetWindowScale(scoreMenu);
                 dstW = smw * sScale;
                 dstH = smh * sScale;
                 dstX = ((float)sw - dstW) / 2.0f;
-                dstY = 30.0f; // margem superior fixa
+                dstY = 30.0f;
                 Rectangle srcS = { 0.0f, 0.0f, (float)smw, (float)smh };
                 Rectangle dstS = { dstX, dstY, dstW, dstH };
                 Vector2 origS = { 0.0f, 0.0f };
                 DrawTexturePro(scoreMenu, srcS, dstS, origS, 0.0f, WHITE);
             }
-            // Agora desenha os scores começando logo abaixo da imagem `scoreMenu` (ou em y padrão se não existir)
             int scoresStartY = (int)(dstY + dstH + 10.0f);
-            // Limita a posição para que caiba na tela
             int maxStartY = (int)(sh * 0.3f);
             if (scoresStartY > maxStartY || dstH <= 0) scoresStartY = maxStartY;
             
@@ -382,21 +352,17 @@ void GUI_GetBackgroundDest(Rectangle *outDest) {
 // do overlay como pilares esquerdo/direito. A área interna exclui esses pilares.
 void GUI_GetPlayArea(Rectangle *outArea) {
     Rectangle dest = {0,0, (float)GetScreenWidth(), (float)GetScreenHeight()};
-    // Prefer GUI background area if available so spawn/movement are constrained to background
     if (guiBackground.width > 0 && guiBackground.height > 0) {
         GUI_GetBackgroundDest(&dest);
     } else {
         GUI_GetOverlayDest(&dest);
     }
-    // fraction representing bar width relative to overlay width (tweakable)
     const float baseBarFrac = 0.12f;
-    const float barFrac = baseBarFrac * 2.0f; // doubled to match debug/visual bar width
-    // small inward shifts (scaled). Left moved further 4px, right moved further 8px.
+    const float barFrac = baseBarFrac * 2.0f;
     float baseShift = 4.0f * GUI_GetScale();
-    // increase both pillars inward by additional 5 pixels (scaled)
     float extra = 5.0f * GUI_GetScale();
-    float leftShift = baseShift * 2.0f + extra;   // ~8px + 5px scaled
-    float rightShift = baseShift * 3.0f + extra;  // ~12px + 5px scaled
+    float leftShift = baseShift * 2.0f + extra; 
+    float rightShift = baseShift * 3.0f + extra; 
     float left = dest.x + dest.width * barFrac + leftShift;
     float right = dest.x + dest.width * (1.0f - barFrac) - rightShift;
     float top = dest.y;
@@ -436,28 +402,23 @@ void GUI_DrawOverlay(int playerLives) {
 
     // calcula a área de jogo dentro das barras
     Rectangle playArea; GUI_GetPlayArea(&playArea);
-    // Visual do bloqueador de movimento removido (colisão ainda aplicada via limites de playArea)
-    const float baseBarFrac = 0.12f; // must match GUI_GetPlayArea base
-    const float barFrac = baseBarFrac * 2.0f; // doubled to match debug/visual request
-    // asymmetric inward shifts (scaled): left and right moved differently toward center
+    const float baseBarFrac = 0.12f; 
+    const float barFrac = baseBarFrac * 2.0f;
     float baseShift = 4.0f * GUI_GetScale();
     float extra = 5.0f * GUI_GetScale();
-    float leftShift = baseShift * 2.0f + extra;   // ~8px + 5px scaled
-    float rightShift = baseShift * 3.0f + extra;  // ~12px + 5px scaled
-    // calcula larguras das barras esquerda/direita com base no overlay (consistente com GUI_GetPlayArea)
+    float leftShift = baseShift * 2.0f + extra;
+    float rightShift = baseShift * 3.0f + extra; 
     float leftBarWidth = overlay.width * barFrac;
     float rightBarWidth = overlay.width * barFrac;
 
     // Desenha vidas como cristais dentro da barra esquerda (espalhados horizontalmente, tamanho aumentado)
     if (health.width > 0 && health.height > 0) {
-        // calcula escala para que os ícones caibam na largura da barra (com algum padding)
         float maxIconW = (leftBarWidth - 16.0f) / (float)fmaxf(1, playerLives);
         float baseScale = maxIconW / (float)health.width;
-        if (baseScale > 2.0f) baseScale = 2.0f; // cap scale to ~2x
+        if (baseScale > 2.0f) baseScale = 2.0f; 
         if (baseScale < 0.2f) baseScale = 0.2f;
         float iconW = health.width * baseScale;
         float iconH = health.height * baseScale;
-        // Aumenta o tamanho visual dos cristais conforme solicitado
         iconW *= 1.5f;
         iconH *= 1.5f;
 
@@ -466,7 +427,7 @@ void GUI_DrawOverlay(int playerLives) {
         float totalWidth = playerLives * iconW + (playerLives - 1) * 6.0f;
         float startX = leftBarXCenter - totalWidth / 2.0f;
         float extraY = 24.0f * GUI_GetScale();
-        float y = overlay.y + 16.0f + extraY; // moved down to avoid overlapping header
+        float y = overlay.y + 16.0f + extraY;
 
         for (int i = 0; i < playerLives; i++) {
             float ix = startX + i * (iconW + 6.0f);
@@ -484,7 +445,6 @@ void GUI_DrawOverlay(int playerLives) {
     char scoreBuf[64];
     snprintf(scoreBuf, sizeof(scoreBuf), "%d", score);
     int textW = MeasureText(scoreBuf, fontSize);
-    // antes o número era deslocado um pouco para a esquerda; agora reduzimos esse deslocamento para aproximar à direita
     float nudge = 4.0f * GUI_GetScale();
     DrawText(scoreBuf, (int)(rightBarCenterX - textW / 2.0f - nudge), (int)scoreY, fontSize, RAYWHITE);
 }
@@ -493,9 +453,7 @@ void GUI_DrawOverlay(int playerLives) {
 void GUI_DrawDebugOverlay(void) {
     Rectangle overlay; GUI_GetOverlayDest(&overlay);
     const float barFrac = 0.12f;
-    // dobra a largura lateral das barras para visualização de depuração (solicitado pelo usuário)
     const float adjFrac = barFrac * 2.0f;
-    // aplica os mesmos deslocamentos assimétricos para dentro usados pela área de jogo, assim as barras de depuração batem com as colisões
     float baseShift = 4.0f * GUI_GetScale();
     float extra = 5.0f * GUI_GetScale();
     float leftShift = baseShift * 2.0f + extra;
@@ -513,7 +471,7 @@ void GUI_DrawDebugOverlay(void) {
     DrawRectangleRec(rightBar, rightFill);
     DrawRectangleRec(playArea, playFill);
 
-    // outlines for clarity
+    // outlines
     Color outline = (Color){ 255, 255, 255, 180 };
     DrawRectangleLinesEx(leftBar, 2.0f, outline);
     DrawRectangleLinesEx(rightBar, 2.0f, outline);
