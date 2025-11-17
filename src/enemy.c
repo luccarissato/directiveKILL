@@ -85,8 +85,10 @@ static void SpawnWave(int count) {
     for (int r = 0; r < GRID_ROWS; r++) {
         for (int c = 0; c < GRID_COLS; c++) if (!spawnOccupied[r][c]) freeCount[r]++;
     }
-    int chosenRow = 0;
+    int chosenRow;
     if (freeCount[1] > freeCount[0]) chosenRow = 1;
+    else if (freeCount[0] > freeCount[1]) chosenRow = 0;
+    else chosenRow = GetRandomValue(0, 1);
 
     int freeCols[GRID_COLS]; int freeColsCount = 0;
     for (int c = 0; c < GRID_COLS; c++) if (!spawnOccupied[chosenRow][c]) freeCols[freeColsCount++] = c;
