@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "../include/gui.h"
 
 static Projectile *g_pool = NULL;
 static int g_poolSize = 0;
@@ -36,7 +35,7 @@ void Projectiles_Spawn(Vector2 pos, Vector2 vel, float radius, int damage, Color
             g_pool[i].active = true;
             g_pool[i].position = pos;
             g_pool[i].velocity = vel;
-            g_pool[i].radius = radius * GUI_GetScale();
+            g_pool[i].radius = radius;
             // age marca o tempo desde o spawn, se negativo é porque está em delay, life é o tempo ativo
             g_pool[i].life = lifeSec;
             g_pool[i].age = -fabsf(delaySec);
@@ -72,7 +71,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
         {
             const float sideOffset = 12.0f;
             const float speed = 380.0f;
-            const float radius = 2.0f; // reduced again by half
+            const float radius = 8.0f;
             const int damage = 1;
             const float life = 5.0f;
 
@@ -89,7 +88,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                     g_pool[i].active = true;
                     g_pool[i].position = spawnL;
                     g_pool[i].velocity = initVelL;
-                    g_pool[i].radius = radius * GUI_GetScale();
+                    g_pool[i].radius = radius;
                     g_pool[i].life = life;
                     g_pool[i].age = -fabsf(delay);
                     g_pool[i].damage = damage;
@@ -111,7 +110,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                     g_pool[i].active = true;
                     g_pool[i].position = spawnR;
                     g_pool[i].velocity = initVelR;
-                    g_pool[i].radius = radius * GUI_GetScale();
+                    g_pool[i].radius = radius;
                     g_pool[i].life = life;
                     g_pool[i].age = -fabsf(delay);
                     g_pool[i].damage = damage;
@@ -128,7 +127,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
         }
         case 2:
         {
-            const float radius = 2.5f; // reduced again by half
+            const float radius = 10.0f;
             const int damage = 1;
             const float life = 2.0f;
 
@@ -147,14 +146,14 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                         dir.x = 0.0f; dir.y = preSplitSpeed;
                     }
                     g_pool[i].velocity = dir;
-                    g_pool[i].radius = radius * GUI_GetScale();
+                    g_pool[i].radius = radius;
                     g_pool[i].life = life;
                     g_pool[i].age = 0.0f;
                     g_pool[i].damage = damage;
-                    g_pool[i].color = (Color){ 100, 200, 140, 255 };
+                    g_pool[i].color = WHITE; // use sprite default color for parent
                     g_pool[i].homingSpeed = 0.0f;
                     g_pool[i].willHome = false;
-                    g_pool[i].visualType = 0;
+                    g_pool[i].visualType = 2; // draw using spike_proj2 sprite
                     g_pool[i].flipSprite = false;
                     g_pool[i].willSplit = true;
                     g_pool[i].angleDeg = (float)GetRandomValue(0, 359);
@@ -211,7 +210,26 @@ void Projectiles_Update(float dt)
             for (int k = 0; k < 4; k++) {
                 float ang = baseRad + (float)k * (PI / 2.0f);
                 Vector2 v = { cosf(ang) * childSpeed, sinf(ang) * childSpeed };
-                Projectiles_Spawn(b->position, v, 4.0f, 1, WHITE, 5.0f, 0.0f, 0.0f);
+                for (int j = 0; j < g_poolSize; j++) {
+                    if (!g_pool[j].active) {
+                        g_pool[j].active = true;
+                        g_pool[j].position = b->position;
+                        g_pool[j].velocity = v;
+                        g_pool[j].radius = 4.0f;
+                        g_pool[j].life = 5.0f;
+                        g_pool[j].age = 0.0f;
+                        g_pool[j].damage = 1;
+                        g_pool[j].color = WHITE;
+                        g_pool[j].homingSpeed = 0.0f;
+                        g_pool[j].willHome = false;
+                        g_pool[j].visualType = 2;
+                        g_pool[j].flipSprite = false;
+                        g_pool[j].willSplit = false;
+                        g_pool[j].angleDeg = 0.0f;
+                        g_pool[j].spinSpeedDeg = 0.0f;
+                        break;
+                    }
+                }
             }
             b->active = false;
             continue;
@@ -233,7 +251,7 @@ void Projectiles_Draw(void)
     }
 }
 
-void Projectiles_DrawWithSprite(Texture2D spikeSprite)
+void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spike2Sprite)
 {
     if (!g_pool) return;
     for (int i = 0; i < g_poolSize; i++) {
@@ -245,7 +263,7 @@ void Projectiles_DrawWithSprite(Texture2D spikeSprite)
         } else if (b->visualType == 1) {
             float angle = atan2f(b->velocity.y, b->velocity.x) * RAD2DEG;
             
-            float scale = 0.5f * GUI_GetScale(); // reduce sprite draw size by half again
+            float scale = 2.0f;
             Rectangle source = { 0, 0, (float)spikeSprite.width, (float)spikeSprite.height };
             
             if (b->flipSprite) {
@@ -265,6 +283,14 @@ void Projectiles_DrawWithSprite(Texture2D spikeSprite)
             };
             
             DrawTexturePro(spikeSprite, source, dest, origin, angle, b->color);
+        } else if (b->visualType == 2) {
+            float angle = atan2f(b->velocity.y, b->velocity.x) * RAD2DEG;
+            float scale = 2.0f;
+            Rectangle source2 = { 0, 0, (float)spike2Sprite.width, (float)spike2Sprite.height };
+            if (b->flipSprite) source2.width = -(float)spike2Sprite.width;
+            Rectangle dest2 = { b->position.x, b->position.y, fabsf(source2.width) * scale, spike2Sprite.height * scale };
+            Vector2 origin2 = { fabsf(source2.width) * scale / 2.0f, spike2Sprite.height * scale / 2.0f };
+            DrawTexturePro(spike2Sprite, source2, dest2, origin2, angle, b->color);
         }
     }
 }

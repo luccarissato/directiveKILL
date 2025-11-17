@@ -22,13 +22,15 @@ int main(void)
 
     Texture2D enemySprite = LoadTexture("assets/textures/broken_ship.png");
     Texture2D scoutSprite = LoadTexture("assets/textures/scout.png");
+    Texture2D soldierSprite = LoadTexture("assets/textures/soldier.png");
     Texture2D spikeSprite = LoadTexture("assets/GUI/Elements/spike_proj.png");
+    Texture2D spike2Sprite = LoadTexture("assets/GUI/Elements/spike_proj2.png");
     float enemiesStopYRatio = 0.27f;
 
     Projectiles_Init(200);
 
     Vector2 playerPosition;
-    float playerRadius = 10.0f; // reduced by half
+    float playerRadius = 20.0f;
     float basePlayerSpeed = 200.0f; 
 
     Player_Init(); 
@@ -84,8 +86,8 @@ int main(void)
 
         case GUI_STATE_GAME:
         {
-            float scale = GUI_GetScale();
-                float playerSpeed = basePlayerSpeed * scale * delta;
+            float scale = fminf((float)currentWidth / 800.0f, (float)currentHeight / 450.0f);
+            float playerSpeed = basePlayerSpeed * scale * delta;
             
             float newStopY = currentHeight * enemiesStopYRatio;
             if (fabsf(newStopY - enemiesStopY) > 1.0f) {
@@ -117,12 +119,12 @@ int main(void)
             Player_Draw(&playerPosition);
 
             Enemies_Update();
-            Enemies_Draw(enemySprite, scoutSprite);
+            Enemies_Draw(enemySprite, scoutSprite, soldierSprite);
 
             Projectiles_SetPlayerPosition(playerPosition);
 
             Projectiles_Update(delta);
-            Projectiles_DrawWithSprite(spikeSprite);
+            Projectiles_DrawWithSprite(spikeSprite, spike2Sprite);
 
             int hits = Projectiles_CheckPlayerCollision(playerPosition, playerRadius);
             if (hits > 0) {
@@ -201,7 +203,9 @@ Gui_Unload();
 Player_Unload();
 UnloadTexture(enemySprite);
 UnloadTexture(scoutSprite);
+UnloadTexture(soldierSprite);
 UnloadTexture(spikeSprite);
+UnloadTexture(spike2Sprite);
 Projectiles_Free();
 CloseWindow();
 return 0;

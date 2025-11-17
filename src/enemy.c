@@ -4,7 +4,6 @@
 #include <math.h>
 #include "../include/projectile.h"
 #include "../include/game.h"
-#include "../include/gui.h"
 
 #define MAX_ENEMIES 10
 #define GRID_COLS 9
@@ -32,7 +31,7 @@ typedef struct Enemy {
 
 Enemy enemies[MAX_ENEMIES] = { 0 };
 static bool spawnOccupied[GRID_ROWS][GRID_COLS] = { 0 };
-static float base_draw_scale = 1.25f; // reduced by half
+static float scale = 2.5f;
 static int g_currentWave = 1;
 static int g_enemiesThisWave = 1;
 static float g_waveTimer = 0.0f;
@@ -90,7 +89,7 @@ static void SpawnWave(int count) {
             int spawnY = -GetRandomValue(16, 48);
             enemies[i].position = (Vector2){ px, (float)spawnY };
             enemies[i].speed = (Vector2){ 0, (float)GetRandomValue(30, 80) / 60.0f };
-            enemies[i].radius = 10.0f * GUI_GetScale();
+            enemies[i].radius = 20.0f;
             enemies[i].active = true;
             enemies[i].stopped = false;
             enemies[i].hp = 3;
@@ -98,7 +97,8 @@ static void SpawnWave(int count) {
             float jitter = (float)GetRandomValue(-10, 10);
             enemies[i].targetY = g_stopY + chosenRow * rowSpacing + jitter;
             if (enemies[i].type == 2) {
-                enemies[i].color = (Color){ 100, 200, 140, 255 };
+                // use default white color for soldier sprite (no tint)
+                enemies[i].color = WHITE;
             } else {
                 enemies[i].color = (enemies[i].type == 1) ? RED : WHITE;
             }
@@ -279,16 +279,27 @@ bool Enemies_CheckHit(Vector2 pos, float radius) {
     return false;
 }
 
-void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite) {
+void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldierSprite) {
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].active) continue;
 
-        Texture2D currentSprite = (enemies[i].type == 1) ? scoutSprite : enemySprite;
-        Color tint = (enemies[i].type == 1) ? WHITE : enemies[i].color;
+        Texture2D currentSprite;
+        Color tint = WHITE;
+
+        if (enemies[i].type == 1) {
+            currentSprite = scoutSprite;
+            tint = WHITE;
+        } else if (enemies[i].type == 2) {
+            currentSprite = soldierSprite;
+            tint = WHITE;
+        } else {
+            currentSprite = enemySprite;
+            tint = enemies[i].color;
+        }
 
         Rectangle source = { 0, 0, (float)currentSprite.width, (float)currentSprite.height };
-        Rectangle dest = { enemies[i].position.x, enemies[i].position.y, currentSprite.width, currentSprite.height};
-        Vector2 origin = { (currentSprite.width) / 2.0f, (currentSprite.height) / 2.0f };
+        Rectangle dest = { enemies[i].position.x, enemies[i].position.y, currentSprite.width * scale, currentSprite.height * scale };
+        Vector2 origin = { (currentSprite.width * scale) / 2.0f, (currentSprite.height * scale) / 2.0f };
 
         DrawTexturePro(currentSprite, source, dest, origin, 0.0f, tint);
     }
