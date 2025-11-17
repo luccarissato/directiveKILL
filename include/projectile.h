@@ -17,6 +17,10 @@ typedef struct Projectile {
 	// usando esta velocidade (pixels/segundo)
     float homingSpeed;
     bool willHome;
+    // splitting / spinning behavior
+    bool willSplit; // se true, quando age >= life, explode em múltiplos projeteis
+    float angleDeg; // current orientation for spinning (degrees)
+    float spinSpeedDeg; // degrees per second
     int visualType; // 0 = circle, 1 = spike
     bool flipSprite; // para spike da esquerda (invertido)
 } Projectile;

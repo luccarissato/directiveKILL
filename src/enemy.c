@@ -93,10 +93,14 @@ static void SpawnWave(int count) {
             enemies[i].active = true;
             enemies[i].stopped = false;
             enemies[i].hp = 3;
-            enemies[i].type = GetRandomValue(0, 1);
+            enemies[i].type = GetRandomValue(0, 2);
             float jitter = (float)GetRandomValue(-10, 10);
             enemies[i].targetY = g_stopY + chosenRow * rowSpacing + jitter;
-            enemies[i].color = (enemies[i].type == 1) ? RED : WHITE;
+            if (enemies[i].type == 2) {
+                enemies[i].color = (Color){ 100, 200, 140, 255 };
+            } else {
+                enemies[i].color = (enemies[i].type == 1) ? RED : WHITE;
+            }
             enemies[i].spawnRow = chosenRow;
             enemies[i].spawnCol = col;
             enemies[i].homeX = px;

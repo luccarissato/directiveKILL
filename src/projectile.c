@@ -45,6 +45,9 @@ void Projectiles_Spawn(Vector2 pos, Vector2 vel, float radius, int damage, Color
             g_pool[i].willHome = (homingSpeed > 0.0001f);
             g_pool[i].visualType = 0;
             g_pool[i].flipSprite = false;
+            g_pool[i].willSplit = false;
+            g_pool[i].angleDeg = 0.0f;
+            g_pool[i].spinSpeedDeg = 0.0f;
             break;
         }
     }
@@ -122,10 +125,50 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
 
             break;
         }
+        case 2:
+        {
+            const float radius = 10.0f;
+            const int damage = 1;
+            const float life = 2.0f;
+
+            if (!g_pool) return;
+            for (int i = 0; i < g_poolSize; i++) {
+                if (!g_pool[i].active) {
+                    g_pool[i].active = true;
+                    g_pool[i].position = pos;
+                    const float preSplitSpeed = 160.0f;
+                    Vector2 dir = { target.x - pos.x, target.y - pos.y };
+                    float len = sqrtf(dir.x*dir.x + dir.y*dir.y);
+                    if (len > 0.0001f) {
+                        dir.x = dir.x / len * preSplitSpeed;
+                        dir.y = dir.y / len * preSplitSpeed;
+                    } else {
+                        dir.x = 0.0f; dir.y = preSplitSpeed;
+                    }
+                    g_pool[i].velocity = dir;
+                    g_pool[i].radius = radius;
+                    g_pool[i].life = life;
+                    g_pool[i].age = 0.0f;
+                    g_pool[i].damage = damage;
+                    g_pool[i].color = (Color){ 100, 200, 140, 255 };
+                    g_pool[i].homingSpeed = 0.0f;
+                    g_pool[i].willHome = false;
+                    g_pool[i].visualType = 0;
+                    g_pool[i].flipSprite = false;
+                    g_pool[i].willSplit = true;
+                    g_pool[i].angleDeg = (float)GetRandomValue(0, 359);
+                    g_pool[i].spinSpeedDeg = (float)GetRandomValue(-180, 180);
+                    break;
+                }
+            }
+
+            break;
+        }
         default:
             break;
     }
 }
+
 
 void Projectiles_Update(float dt)
 {
@@ -152,12 +195,25 @@ void Projectiles_Update(float dt)
             }
         }
 
-        if (b->age >= 0.0f) {
-            b->position.x += b->velocity.x * dt;
-            b->position.y += b->velocity.y * dt;
-        } else {
-            b->position.x += b->velocity.x * dt;
-            b->position.y += b->velocity.y * dt;
+        if (b->willSplit && b->age < b->life) {
+            b->angleDeg += b->spinSpeedDeg * dt;
+            if (b->angleDeg >= 360.0f) b->angleDeg -= 360.0f;
+            if (b->angleDeg < 0.0f) b->angleDeg += 360.0f;
+        }
+
+        b->position.x += b->velocity.x * dt;
+        b->position.y += b->velocity.y * dt;
+
+        if (b->willSplit && b->age >= b->life) {
+            const float childSpeed = 260.0f;
+            float baseRad = b->angleDeg * DEG2RAD;
+            for (int k = 0; k < 4; k++) {
+                float ang = baseRad + (float)k * (PI / 2.0f);
+                Vector2 v = { cosf(ang) * childSpeed, sinf(ang) * childSpeed };
+                Projectiles_Spawn(b->position, v, 4.0f, 1, WHITE, 5.0f, 0.0f, 0.0f);
+            }
+            b->active = false;
+            continue;
         }
 
         if (b->age >= b->life || b->position.y > screenH + 100 || b->position.y < -100 || b->position.x < -200 || b->position.x > screenW + 200) {
