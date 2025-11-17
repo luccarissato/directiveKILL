@@ -98,7 +98,7 @@ static void SpawnWave(int count) {
             float jitter = (float)GetRandomValue(-10, 10);
             enemies[i].targetY = g_stopY + chosenRow * rowSpacing + jitter;
             if (enemies[i].type == 2) {
-                enemies[i].color = (Color){ 100, 200, 140, 255 };
+                enemies[i].color = WHITE;
             } else {
                 enemies[i].color = (enemies[i].type == 1) ? RED : WHITE;
             }
@@ -279,13 +279,24 @@ bool Enemies_CheckHit(Vector2 pos, float radius) {
     return false;
 }
 
-void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite) {
+void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldierSprite) {
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].active) continue;
 
-        Texture2D currentSprite = (enemies[i].type == 1) ? scoutSprite : enemySprite;
-        Color tint = (enemies[i].type == 1) ? WHITE : enemies[i].color;
-        float scale = GUI_GetScale() * base_draw_scale;
+        Texture2D currentSprite;
+        Color tint = WHITE;
+
+        if (enemies[i].type == 1) {
+            currentSprite = scoutSprite;
+            tint = WHITE;
+        } else if (enemies[i].type == 2) {
+            currentSprite = soldierSprite;
+            tint = WHITE;
+        } else {
+            currentSprite = enemySprite;
+            tint = enemies[i].color;
+        }
+
         Rectangle source = { 0, 0, (float)currentSprite.width, (float)currentSprite.height };
         Rectangle dest = { enemies[i].position.x, enemies[i].position.y, currentSprite.width * scale, currentSprite.height * scale };
         Vector2 origin = { (currentSprite.width * scale) / 2.0f, (currentSprite.height * scale) / 2.0f };
