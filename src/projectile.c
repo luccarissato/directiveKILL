@@ -27,7 +27,7 @@ void Projectiles_Free(void)
     }
 }
 
-void Projectiles_Spawn(Vector2 pos, Vector2 vel, float radius, int damage, Color color, float lifeSec, float delaySec, float homingSpeed)
+void Projectiles_Spawn(Vector2 pos, Vector2 vel, float radius, int damage, Color color, float lifeSec, float delaySec, float homingSpeed, int ownerType)
 {
     if (!g_pool) return;
     for (int i = 0; i < g_poolSize; i++) {
@@ -43,11 +43,12 @@ void Projectiles_Spawn(Vector2 pos, Vector2 vel, float radius, int damage, Color
             g_pool[i].color = color;
             g_pool[i].homingSpeed = homingSpeed;
             g_pool[i].willHome = (homingSpeed > 0.0001f);
-            g_pool[i].visualType = 0;
+            g_pool[i].visualType = (ownerType == 1 || ownerType == 2) ? 1 : 0;
             g_pool[i].flipSprite = false;
             g_pool[i].willSplit = false;
             g_pool[i].angleDeg = 0.0f;
             g_pool[i].spinSpeedDeg = 0.0f;
+            g_pool[i].ownerType = ownerType;
             break;
         }
     }
@@ -64,7 +65,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
         case 0:
         {
             Vector2 vel = (Vector2){ 0.0f, 300.0f };
-            Projectiles_Spawn(pos, vel, 4.0f, 1, RED, 5.0f, 0.0f, 0.0f);
+            Projectiles_Spawn(pos, vel, 4.0f, 1, RED, 5.0f, 0.0f, 0.0f, 0);
             break;
         }
         case 1:
@@ -97,6 +98,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                     g_pool[i].willHome = true;
                     g_pool[i].visualType = 1;
                     g_pool[i].flipSprite = true;
+                    g_pool[i].ownerType = 1;
                     break;
                 }
             }
@@ -119,6 +121,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                     g_pool[i].willHome = true;
                     g_pool[i].visualType = 1;
                     g_pool[i].flipSprite = false;
+                    g_pool[i].ownerType = 1;
                     break;
                 }
             }
@@ -150,14 +153,15 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                     g_pool[i].life = life;
                     g_pool[i].age = 0.0f;
                     g_pool[i].damage = damage;
-                    g_pool[i].color = (Color){ 100, 200, 140, 255 };
+                    g_pool[i].color = WHITE;
                     g_pool[i].homingSpeed = 0.0f;
                     g_pool[i].willHome = false;
-                    g_pool[i].visualType = 0;
+                    g_pool[i].visualType = 1;
                     g_pool[i].flipSprite = false;
                     g_pool[i].willSplit = true;
                     g_pool[i].angleDeg = (float)GetRandomValue(0, 359);
                     g_pool[i].spinSpeedDeg = (float)GetRandomValue(-180, 180);
+                    g_pool[i].ownerType = 2;
                     break;
                 }
             }
@@ -210,7 +214,7 @@ void Projectiles_Update(float dt)
             for (int k = 0; k < 4; k++) {
                 float ang = baseRad + (float)k * (PI / 2.0f);
                 Vector2 v = { cosf(ang) * childSpeed, sinf(ang) * childSpeed };
-                Projectiles_Spawn(b->position, v, 4.0f, 1, WHITE, 5.0f, 0.0f, 0.0f);
+                Projectiles_Spawn(b->position, v, 4.0f, 1, WHITE, 5.0f, 0.0f, 0.0f, b->ownerType);
             }
             b->active = false;
             continue;
@@ -232,7 +236,7 @@ void Projectiles_Draw(void)
     }
 }
 
-void Projectiles_DrawWithSprite(Texture2D spikeSprite)
+void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spikeSprite2)
 {
     if (!g_pool) return;
     for (int i = 0; i < g_poolSize; i++) {
@@ -263,7 +267,11 @@ void Projectiles_DrawWithSprite(Texture2D spikeSprite)
                 spikeSprite.height * scale / 2.0f 
             };
             
-            DrawTexturePro(spikeSprite, source, dest, origin, angle, b->color);
+            Texture2D useSprite = (b->ownerType == 2) ? spikeSprite2 : spikeSprite;
+            Rectangle source2 = { 0, 0, (float)useSprite.width, (float)useSprite.height };
+            Rectangle dest2 = { b->position.x, b->position.y, fabsf(source2.width) * scale, useSprite.height * scale };
+            Vector2 origin2 = { fabsf(source2.width) * scale / 2.0f, useSprite.height * scale / 2.0f };
+            DrawTexturePro(useSprite, source2, dest2, origin2, angle, b->color);
         }
     }
 }
