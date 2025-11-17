@@ -3,6 +3,7 @@
 #include "../include/player.h"
 #include "raylib.h"
 #include <string.h>
+#include <math.h>
 #include "../include/enemy.h"
 
 #define PLAYER_MAX_SHOTS 50
@@ -90,10 +91,22 @@ int Player_GetHealth(void) {
 
 void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float playerSpeed, int screenWidth, int screenHeight)
 {
-	if (IsKeyDown(KEY_W)) playerPosition->y -= playerSpeed;
-	if (IsKeyDown(KEY_A)) playerPosition->x -= playerSpeed;
-	if (IsKeyDown(KEY_S)) playerPosition->y += playerSpeed;
-	if (IsKeyDown(KEY_D)) playerPosition->x += playerSpeed;
+	Vector2 movement = { 0.0f, 0.0f };
+	
+	if (IsKeyDown(KEY_W)) movement.y -= 1.0f;
+	if (IsKeyDown(KEY_A)) movement.x -= 1.0f;
+	if (IsKeyDown(KEY_S)) movement.y += 1.0f;
+	if (IsKeyDown(KEY_D)) movement.x += 1.0f;
+
+	// Normaliza o vetor de movimento para manter velocidade constante em diagonais
+	float length = sqrtf(movement.x * movement.x + movement.y * movement.y);
+	if (length > 0.0f) {
+		movement.x = (movement.x / length) * playerSpeed;
+		movement.y = (movement.y / length) * playerSpeed;
+		
+		playerPosition->x += movement.x;
+		playerPosition->y += movement.y;
+	}
 
 	if (playerPosition->x - playerRadius < -playerRadius / 2)
 		playerPosition->x = -playerRadius / 2 + playerRadius;
