@@ -14,7 +14,7 @@ void Enemies_SetPlayArea(float leftX, float rightX);
 void Enemies_UpdateStopY(float newStopY);
 
 // atualiza a posição dos inimigos. Passa a posição do jogador para auxiliar com ataques
-void Enemies_Update(Vector2 playerPos);
+void Enemies_Update(Vector2 playerPos, Texture2D arcSprite, Texture2D arc2Sprite);
 
 // desenha os inimigos na tela
 void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldierSprite, Texture2D arcSprite, Texture2D arc2Sprite, Texture2D arc3Sprite, Texture2D arc4Sprite);
