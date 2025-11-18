@@ -274,7 +274,7 @@ void Projectiles_Draw(void)
     }
 }
 
-void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spike2Sprite)
+void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spike2Sprite, Texture2D bulletSprite)
 {
     if (!g_pool) return;
     for (int i = 0; i < g_poolSize; i++) {
@@ -284,17 +284,17 @@ void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spike2Sprite)
         if (b->visualType == 0) {
             DrawCircleV(b->position, b->radius, b->color);
         } else if (b->visualType == 3) {
-            if (spikeSprite.width <= 0 || spikeSprite.height <= 0) {
+            if (bulletSprite.width <= 0 || bulletSprite.height <= 0) {
                 DrawCircleV(b->position, b->radius, b->color);
             } else {
                 float angle = atan2f(b->velocity.y, b->velocity.x) * RAD2DEG + BULLET_ANGLE_OFFSET;
                 float scale = 0.75f; // metade do tamanho anterior (era 1.5)
-                Rectangle source = { 0, 0, (float)spikeSprite.width, (float)spikeSprite.height };
-                if (b->flipSprite) source.width = -(float)spikeSprite.width;
-                if (b->flipY) source.height = -(float)spikeSprite.height;
+                Rectangle source = { 0, 0, (float)bulletSprite.width, (float)bulletSprite.height };
+                if (b->flipSprite) source.width = -(float)bulletSprite.width;
+                if (b->flipY) source.height = -(float)bulletSprite.height;
                 Rectangle dest = { b->position.x, b->position.y, fabsf(source.width) * scale, fabsf(source.height) * scale };
                 Vector2 origin = { fabsf(source.width) * scale / 2.0f, fabsf(source.height) * scale / 2.0f };
-                DrawTexturePro(spikeSprite, source, dest, origin, angle, b->color);
+                DrawTexturePro(bulletSprite, source, dest, origin, angle, b->color);
             }
         } else if (b->visualType == 1) {
             float angle = atan2f(b->velocity.y, b->velocity.x) * RAD2DEG;

@@ -29,6 +29,7 @@ int main(void)
     Texture2D arc4Sprite = LoadTexture("assets/textures/the_arc4.png");
     Texture2D spikeSprite = LoadTexture("assets/GUI/Elements/spike_proj.png");
     Texture2D spike2Sprite = LoadTexture("assets/GUI/Elements/spike_proj2.png");
+    Texture2D bulletPlayerSprite = LoadTexture("assets/textures/bullet_player.png");
     
     float enemiesStopYRatio = 0.27f;
 
@@ -129,7 +130,7 @@ int main(void)
             Projectiles_SetPlayerPosition(playerPosition);
 
             Projectiles_Update(delta);
-            Projectiles_DrawWithSprite(spikeSprite, spike2Sprite);
+            Projectiles_DrawWithSprite(spikeSprite, spike2Sprite, bulletPlayerSprite);
 
             int hits = Projectiles_CheckPlayerCollision(playerPosition, playerRadius);
             if (hits > 0) {
@@ -215,6 +216,7 @@ UnloadTexture(arc3Sprite);
 UnloadTexture(arc4Sprite);
 UnloadTexture(spikeSprite);
 UnloadTexture(spike2Sprite);
+UnloadTexture(bulletPlayerSprite);
 Projectiles_Free();
 CloseWindow();
 return 0;
