@@ -150,10 +150,10 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                     g_pool[i].life = life;
                     g_pool[i].age = 0.0f;
                     g_pool[i].damage = damage;
-                    g_pool[i].color = WHITE; // use sprite default color for parent
+                    g_pool[i].color = WHITE;
                     g_pool[i].homingSpeed = 0.0f;
                     g_pool[i].willHome = false;
-                    g_pool[i].visualType = 2; // draw using spike_proj2 sprite
+                    g_pool[i].visualType = 2; 
                     g_pool[i].flipSprite = false;
                     g_pool[i].willSplit = true;
                     g_pool[i].angleDeg = (float)GetRandomValue(0, 359);

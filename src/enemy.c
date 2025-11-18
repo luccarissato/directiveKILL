@@ -1,6 +1,7 @@
 // funções dos inimigos
 #include "../include/enemy.h"
 #include "raylib.h"
+#include "../include/player.h"
 #include <math.h>
 #include "../include/projectile.h"
 #include "../include/game.h"
@@ -16,6 +17,7 @@ typedef struct Enemy {
 	Vector2 position;
 	int lifeSpawn;
     int hp;
+    int maxHp;
     float radius;
     float targetY; // onde os inimigos devem parar na tela
     bool stopped;
@@ -28,6 +30,9 @@ typedef struct Enemy {
     float wiggleAmp;
     float wiggleFreq;
     bool isBoss;
+    float laserCooldown;
+    float laserTimer;
+    float laserDamageAccum;
 } Enemy;
 
 Enemy enemies[MAX_ENEMIES] = { 0 };
@@ -53,9 +58,13 @@ static void SpawnWave(int count) {
             enemies[i].active = false;
             enemies[i].stopped = false;
             enemies[i].hp = 0;
+            enemies[i].maxHp = 0;
             enemies[i].spawnRow = -1;
             enemies[i].spawnCol = -1;
             enemies[i].isBoss = false;
+            enemies[i].laserCooldown = 0.0f;
+            enemies[i].laserTimer = 0.0f;
+            enemies[i].laserDamageAccum = 0.0f;
         }
         for (int r = 0; r < GRID_ROWS; r++) for (int c = 0; c < GRID_COLS; c++) spawnOccupied[r][c] = false;
 
@@ -67,6 +76,7 @@ static void SpawnWave(int count) {
         enemies[0].active = true;
         enemies[0].stopped = false;
         enemies[0].hp = 60;
+        enemies[0].maxHp = 60;
         enemies[0].type = 0;
         enemies[0].targetY = g_stopY + rowSpacing;
         enemies[0].color = WHITE;
@@ -74,9 +84,12 @@ static void SpawnWave(int count) {
         enemies[0].spawnCol = -1;
         enemies[0].homeX = centerX;
         enemies[0].motionTimer = 0.0f;
-        enemies[0].wigglePhase = 0.0f;
-        enemies[0].wiggleAmp = 0.0f;
-        enemies[0].wiggleFreq = 0.0f;
+        enemies[0].wigglePhase = (float)GetRandomValue(0, 6283) / 1000.0f;
+        enemies[0].wiggleAmp = (float)GetRandomValue(20, 40);
+        enemies[0].wiggleFreq = (float)GetRandomValue(60, 140) / 100.0f;
+        enemies[0].laserCooldown = 3.0f;
+        enemies[0].laserTimer = 0.0f;
+        enemies[0].laserDamageAccum = 0.0f;
         enemies[0].isBoss = true;
         return;
     }
@@ -150,6 +163,7 @@ static void SpawnWave(int count) {
                 enemies[i].wiggleFreq = (float)GetRandomValue(60, 120) / 100.0f;
             }
             enemies[i].isBoss = false;
+            enemies[i].laserDamageAccum = 0.0f;
             spawnOccupied[chosenRow][col] = true;
         } else {
             enemies[i].active = false;
@@ -197,12 +211,43 @@ void Enemies_UpdateStopY(float newStopY) {
     }
 }
 
-void Enemies_Update(void) {
+void Enemies_Update(Vector2 playerPos) {
     float dt = GetFrameTime();
     const float smoothing = 6.0f;
 
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].active) continue;
+
+        if (enemies[i].isBoss) {
+            if (enemies[i].laserTimer > 0.0f) {
+                enemies[i].laserTimer -= dt;
+                if (enemies[i].laserTimer < 0.0f) enemies[i].laserTimer = 0.0f;
+
+                int sh = GetScreenHeight();
+                float lw = fmaxf(28.0f, enemies[i].radius * 0.9f) * (scale * 0.9f);
+                float lx = enemies[i].position.x - lw * 0.5f;
+
+                float laserStartY = enemies[i].position.y + (enemies[i].radius * scale * 0.5f) + 8.0f;
+
+                bool playerInBeam = (playerPos.x >= lx && playerPos.x <= lx + lw && playerPos.y >= laserStartY && playerPos.y <= (float)sh);
+                if (playerInBeam) {
+                    enemies[i].laserDamageAccum += dt;
+                    while (enemies[i].laserDamageAccum >= 0.25f) {
+                        Player_TakeDamage(1);
+                        enemies[i].laserDamageAccum -= 0.25f;
+                    }
+                } else {
+                    enemies[i].laserDamageAccum = 0.0f;
+                }
+
+            } else {
+                enemies[i].laserCooldown -= dt;
+                if (enemies[i].laserCooldown <= 0.0f) {
+                    enemies[i].laserTimer = 3.0f;
+                    enemies[i].laserCooldown = 3.0f; 
+                }
+            }
+        }
 
         if (!enemies[i].stopped) {
             float toTarget = enemies[i].targetY - enemies[i].position.y;
@@ -222,7 +267,7 @@ void Enemies_Update(void) {
             enemies[i].motionTimer += dt;
             float t = enemies[i].motionTimer;
 
-            if (enemies[i].type == 0 || enemies[i].type == 2) {
+            if (enemies[i].type == 0 || enemies[i].type == 2 || enemies[i].isBoss) {
                 float amp = enemies[i].wiggleAmp;
                 float freq = enemies[i].wiggleFreq;
                 float mainOsc = sinf(t * freq + enemies[i].wigglePhase) * amp;
@@ -294,7 +339,7 @@ void Enemies_Update(void) {
 bool Enemies_CheckHit(Vector2 pos, float radius) {
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].active) continue;
-
+        
         float dx = enemies[i].position.x - pos.x;
         float dy = enemies[i].position.y - pos.y;
         float dist2 = dx*dx + dy*dy;
@@ -312,6 +357,52 @@ bool Enemies_CheckHit(Vector2 pos, float radius) {
                 Game_AddScore(100);
             }
             return true;
+        }
+
+        if (enemies[i].isBoss) {
+            float arcOffset = enemies[i].radius * 2.0f;
+            float arcYOffset = -enemies[i].radius * 0.15f;
+
+            Vector2 arc3Pos = { enemies[i].position.x - arcOffset, enemies[i].position.y + arcYOffset };
+            Vector2 arc4Pos = { enemies[i].position.x + arcOffset, enemies[i].position.y + arcYOffset };
+
+            float dx3 = arc3Pos.x - pos.x;
+            float dy3 = arc3Pos.y - pos.y;
+            float dist23 = dx3*dx3 + dy3*dy3;
+            float minDistArc = enemies[i].radius * 0.9f + radius;
+
+            if (dist23 <= minDistArc * minDistArc) {
+                enemies[i].hp -= 1;
+                if (enemies[i].hp <= 0) {
+                    enemies[i].active = false;
+                    if (enemies[i].spawnRow >= 0 && enemies[i].spawnCol >= 0) {
+                        int sr = enemies[i].spawnRow;
+                        int sc = enemies[i].spawnCol;
+                        if (sr >= 0 && sr < GRID_ROWS && sc >= 0 && sc < GRID_COLS) spawnOccupied[sr][sc] = false;
+                        enemies[i].spawnRow = -1; enemies[i].spawnCol = -1;
+                    }
+                    Game_AddScore(100);
+                }
+                return true;
+            }
+
+            float dx4 = arc4Pos.x - pos.x;
+            float dy4 = arc4Pos.y - pos.y;
+            float dist24 = dx4*dx4 + dy4*dy4;
+            if (dist24 <= minDistArc * minDistArc) {
+                enemies[i].hp -= 1;
+                if (enemies[i].hp <= 0) {
+                    enemies[i].active = false;
+                    if (enemies[i].spawnRow >= 0 && enemies[i].spawnCol >= 0) {
+                        int sr = enemies[i].spawnRow;
+                        int sc = enemies[i].spawnCol;
+                        if (sr >= 0 && sr < GRID_ROWS && sc >= 0 && sc < GRID_COLS) spawnOccupied[sr][sc] = false;
+                        enemies[i].spawnRow = -1; enemies[i].spawnCol = -1;
+                    }
+                    Game_AddScore(100);
+                }
+                return true;
+            }
         }
     }
     return false;
@@ -370,6 +461,31 @@ void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldie
                 Vector2 origin4 = { (arc4Sprite.width * scale) / 2.0f, arc4Sprite.height * scale };
                 DrawTexturePro(arc4Sprite, source4, dest4, origin4, 0.0f, WHITE);
             }
+
+
+            if (enemies[i].laserTimer > 0.0f) {
+                int sh = GetScreenHeight();
+                float lw = fmaxf(28.0f, enemies[i].radius * 0.9f) * (scale * 0.9f);
+                float lx = enemies[i].position.x - lw * 0.5f;
+
+                float bossHalfH = (currentSprite.height * scale) / 2.0f;
+                float bossBottomY = enemies[i].position.y + bossHalfH;
+                float laserStartY = bossBottomY + 8.0f;
+                float laserH = (float)sh - laserStartY;
+
+                DrawRectangleRec((Rectangle){ lx, laserStartY, lw, laserH }, (Color){ 255, 220, 220, 200 });
+                float coreW = lw * 0.35f;
+                float coreX = enemies[i].position.x - coreW * 0.5f;
+                DrawRectangleRec((Rectangle){ coreX, laserStartY, coreW, laserH }, (Color){ 255, 180, 180, 255 });
+
+                DrawRectangleRec((Rectangle){ coreX - 2.0f, laserStartY + sh * 0.05f, 2.0f, sh * 0.9f }, (Color){ 255, 120, 120, 80 });
+                DrawRectangleRec((Rectangle){ coreX + coreW, laserStartY + sh * 0.05f, 2.0f, sh * 0.9f }, (Color){ 255, 120, 120, 80 });
+
+                float step = 40.0f * (scale * 0.9f);
+                for (float y = laserStartY + sh * 0.08f; y < sh * 0.95f; y += step) {
+                    DrawCircleV((Vector2){ enemies[i].position.x, y }, 2.5f * (scale * 0.6f), (Color){ 200, 60, 60, 220 });
+                }
+            }
         }
 
         DrawTexturePro(currentSprite, source, dest, origin, 0.0f, tint);
@@ -389,6 +505,38 @@ bool Enemies_GetFirstActivePosition(Vector2 *outPos, int *outIndex) {
 void Enemies_ShootAll(Vector2 playerPos) {
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].active) continue;
-        Projectiles_Type(enemies[i].type, enemies[i].position, playerPos);
+        if (enemies[i].isBoss) {
+            const float sideOffset = enemies[i].radius * 0.9f;
+            const float spawnYOff = 10.0f;
+            const float speed = 320.0f;
+            const float bulletRadius = 4.0f;
+            const int damage = 1;
+            const float life = 6.0f;
+            const int bursts = 3;
+            const float burstDelay = 0.22f;
+            const float spreadDeg = 10.0f;
+            const float centerLeft = 110.0f;
+            const float centerRight = 70.0f;
+
+            for (int b = 0; b < bursts; b++) {
+                float delay = b * burstDelay;
+
+                for (int k = -1; k <= 1; k++) {
+                    float ang = (centerLeft + k * spreadDeg) * DEG2RAD;
+                    Vector2 vel = { cosf(ang) * speed, sinf(ang) * speed };
+                    Vector2 spawn = { enemies[i].position.x - sideOffset, enemies[i].position.y + spawnYOff };
+                    Projectiles_Spawn(spawn, vel, bulletRadius, damage, WHITE, life, delay, 0.0f);
+                }
+
+                for (int k = -1; k <= 1; k++) {
+                    float ang = (centerRight + k * spreadDeg) * DEG2RAD;
+                    Vector2 vel = { cosf(ang) * speed, sinf(ang) * speed };
+                    Vector2 spawn = { enemies[i].position.x + sideOffset, enemies[i].position.y + spawnYOff };
+                    Projectiles_Spawn(spawn, vel, bulletRadius, damage, WHITE, life, delay, 0.0f);
+                }
+            }
+        } else {
+            Projectiles_Type(enemies[i].type, enemies[i].position, playerPos);
+        }
     }
 }

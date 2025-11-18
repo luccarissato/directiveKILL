@@ -49,7 +49,7 @@ void Player_Init(void)
 	reloadTimer = 0.0f;
 	burstCount = 0;
 	isReloading = false;
-	health = 3;
+	health = 99;
 	invulnTimer = 0.0f;
 	playerSprite = LoadTexture("assets/textures/player.png");
 }
@@ -69,7 +69,7 @@ void Player_Reset(void)
 	reloadTimer = 0.0f;
 	burstCount = 0;
 	isReloading = false;
-	health = 3;
+	health = 99;
 	invulnTimer = 0.0f;
 }
 
@@ -94,14 +94,14 @@ void Player_Unload(void)
 }
 
 void Player_TakeDamage(int amount) {
-	return;
-	// if (amount <= 0) return;
-	// if (invulnTimer > 0.0f) return;
+	// return;
+	if (amount <= 0) return;
+	if (invulnTimer > 0.0f) return;
 
-	// health -= amount;
-	// if (health < 0) health = 0;
+	health -= amount;
+	if (health < 0) health = 0;
 
-	// invulnTimer = 1.0f; 
+	invulnTimer = 1.0f; 
 }
 
 int Player_GetHealth(void) {
@@ -117,7 +117,6 @@ void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float pl
 	if (IsKeyDown(KEY_S)) movement.y += 1.0f;
 	if (IsKeyDown(KEY_D)) movement.x += 1.0f;
 
-	// Normaliza o vetor de movimento para manter velocidade constante em diagonais
 	float length = sqrtf(movement.x * movement.x + movement.y * movement.y);
 	if (length > 0.0f) {
 		movement.x = (movement.x / length) * playerSpeed;

@@ -13,8 +13,8 @@ void Enemies_SetPlayArea(float leftX, float rightX);
 // atualiza a posição de parada dos inimigos (quando janela é redimensionada)
 void Enemies_UpdateStopY(float newStopY);
 
-// atualiza a posição dos inimigos
-void Enemies_Update(void);
+// atualiza a posição dos inimigos. Passa a posição do jogador para auxiliar com ataques
+void Enemies_Update(Vector2 playerPos);
 
 // desenha os inimigos na tela
 void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldierSprite, Texture2D arcSprite, Texture2D arc2Sprite, Texture2D arc3Sprite, Texture2D arc4Sprite);
@@ -23,7 +23,6 @@ void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldie
 bool Enemies_GetFirstActivePosition(Vector2 *outPos, int *outIndex);
 
 // todos os inimigos atiram com o seu respectivo padrão
-// playerPos: posição atual do jogador para padrões que miram no jogador
 void Enemies_ShootAll(Vector2 playerPos);
 
 // temporário só pra mostrar qual wave é
