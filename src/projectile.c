@@ -8,6 +8,7 @@
 static Projectile *g_pool = NULL;
 static int g_poolSize = 0;
 static Vector2 g_playerPos = {0,0};
+static const float BULLET_ANGLE_OFFSET = 90.0f; // corrige orientação da sprite
 
 void Projectiles_Init(int maxProjectiles)
 {
@@ -45,6 +46,7 @@ void Projectiles_Spawn(Vector2 pos, Vector2 vel, float radius, int damage, Color
             g_pool[i].willHome = (homingSpeed > 0.0001f);
             g_pool[i].visualType = 0;
             g_pool[i].flipSprite = false;
+            g_pool[i].flipY = (vel.y > 0.0f);
             g_pool[i].willSplit = false;
             g_pool[i].angleDeg = 0.0f;
             g_pool[i].spinSpeedDeg = 0.0f;
@@ -64,7 +66,28 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
         case 0:
         {
             Vector2 vel = (Vector2){ 0.0f, 300.0f };
-            Projectiles_Spawn(pos, vel, 4.0f, 1, RED, 5.0f, 0.0f, 0.0f);
+            if (!g_pool) return;
+            for (int i = 0; i < g_poolSize; i++) {
+                if (!g_pool[i].active) {
+                    g_pool[i].active = true;
+                    g_pool[i].position = pos;
+                    g_pool[i].velocity = vel;
+                    g_pool[i].radius = 4.0f;
+                    g_pool[i].life = 5.0f;
+                    g_pool[i].age = 0.0f;
+                    g_pool[i].damage = 1;
+                    g_pool[i].color = RED;
+                    g_pool[i].homingSpeed = 0.0f;
+                    g_pool[i].willHome = false;
+                    g_pool[i].visualType = 3;
+                    g_pool[i].flipSprite = false;
+                    g_pool[i].flipY = (vel.y > 0.0f);
+                    g_pool[i].willSplit = false;
+                    g_pool[i].angleDeg = 0.0f;
+                    g_pool[i].spinSpeedDeg = 0.0f;
+                    break;
+                }
+            }
             break;
         }
         case 1:
@@ -260,6 +283,19 @@ void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spike2Sprite)
         
         if (b->visualType == 0) {
             DrawCircleV(b->position, b->radius, b->color);
+        } else if (b->visualType == 3) {
+            if (spikeSprite.width <= 0 || spikeSprite.height <= 0) {
+                DrawCircleV(b->position, b->radius, b->color);
+            } else {
+                float angle = atan2f(b->velocity.y, b->velocity.x) * RAD2DEG + BULLET_ANGLE_OFFSET;
+                float scale = 0.75f; // metade do tamanho anterior (era 1.5)
+                Rectangle source = { 0, 0, (float)spikeSprite.width, (float)spikeSprite.height };
+                if (b->flipSprite) source.width = -(float)spikeSprite.width;
+                if (b->flipY) source.height = -(float)spikeSprite.height;
+                Rectangle dest = { b->position.x, b->position.y, fabsf(source.width) * scale, fabsf(source.height) * scale };
+                Vector2 origin = { fabsf(source.width) * scale / 2.0f, fabsf(source.height) * scale / 2.0f };
+                DrawTexturePro(spikeSprite, source, dest, origin, angle, b->color);
+            }
         } else if (b->visualType == 1) {
             float angle = atan2f(b->velocity.y, b->velocity.x) * RAD2DEG;
             

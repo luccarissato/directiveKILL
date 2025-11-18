@@ -112,7 +112,7 @@ int main(void)
 
             Rectangle playArea; GUI_GetPlayArea(&playArea);
             float allowedTop = playArea.y + playArea.height * 0.6f;
-            Player_HandleMovement(&playerPosition, playerRadius, playerSpeed, playArea.x, playArea.x + playArea.width, allowedTop, playArea.y + playArea.height);
+            Player_HandleMovement(delta, &playerPosition, playerRadius, playerSpeed, playArea.x, playArea.x + playArea.width, allowedTop, playArea.y + playArea.height);
             Player_HandleShooting(delta, playerPosition);
             Player_UpdateShots(delta);
 

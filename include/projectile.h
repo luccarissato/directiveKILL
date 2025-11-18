@@ -20,6 +20,7 @@ typedef struct Projectile {
     float spinSpeedDeg;
     int visualType; 
     bool flipSprite; 
+	bool flipY; 
 } Projectile;
 
 // inicializa os projeteis com uma quantidade fixa deles

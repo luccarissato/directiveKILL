@@ -32,7 +32,15 @@ static int health = 1;
 static float invulnTimer = 0.0f;
 
 static Texture2D playerSprite;
-static float base_draw_scale = 1.25f; // reduced by half
+static Texture2D playerTex_neutral;
+static Texture2D playerTex_left;
+static Texture2D playerTex_right;
+static Texture2D *currentPlayerTex = NULL;
+static Texture2D bulletSprite;
+static float base_draw_scale = 1.25f;
+
+// Estado da Animação
+static int animState = 0;
 
 void Player_Init(void)
 {
@@ -51,7 +59,12 @@ void Player_Init(void)
 	isReloading = false;
 	health = 99;
 	invulnTimer = 0.0f;
-	playerSprite = LoadTexture("assets/textures/player.png");
+	playerTex_neutral = LoadTexture("assets/textures/player.png");
+	playerTex_left = LoadTexture("assets/textures/player1.png");
+	playerTex_right = LoadTexture("assets/textures/player2.png");
+	bulletSprite = LoadTexture("assets/textures/bullet_player.png");
+	currentPlayerTex = &playerTex_neutral;
+	animState = 0;
 }
 
 // reseta estado do jogador sem recarregar sprite
@@ -75,10 +88,11 @@ void Player_Reset(void)
 
 void Player_Draw(Vector2 *playerPosition) {
 	float scale = GUI_GetScale() * base_draw_scale;
-	Rectangle source = { 0, 0, (float)playerSprite.width, (float)playerSprite.height };
-	Rectangle dest = { playerPosition->x, playerPosition->y, (float)playerSprite.width * scale, (float)playerSprite.height * scale };
-	Vector2 origin = { (playerSprite.width * scale) / 2.0f, (playerSprite.height * scale) / 2.0f };
-	DrawTexturePro(playerSprite, source, dest, origin, 0.0f, WHITE);
+	Texture2D drawTex = currentPlayerTex ? *currentPlayerTex : playerTex_neutral;
+	Rectangle source = { 0, 0, (float)drawTex.width, (float)drawTex.height };
+	Rectangle dest = { playerPosition->x, playerPosition->y, (float)drawTex.width * scale, (float)drawTex.height * scale };
+	Vector2 origin = { (drawTex.width * scale) / 2.0f, (drawTex.height * scale) / 2.0f };
+	DrawTexturePro(drawTex, source, dest, origin, 0.0f, WHITE);
 
 	if (invulnTimer > 0.0f) {
 		Color wash = (Color){ 255, 255, 255, 120 };
@@ -90,7 +104,10 @@ void Player_Draw(Vector2 *playerPosition) {
 
 void Player_Unload(void)
 {
-	UnloadTexture(playerSprite);
+	UnloadTexture(playerTex_neutral);
+	UnloadTexture(playerTex_left);
+	UnloadTexture(playerTex_right);
+	UnloadTexture(bulletSprite);
 }
 
 void Player_TakeDamage(int amount) {
@@ -108,7 +125,7 @@ int Player_GetHealth(void) {
 	return health;
 }
 
-void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float playerSpeed, float leftBound, float rightBound, float topBound, float bottomBound)
+void Player_HandleMovement(float delta, Vector2 *playerPosition, float playerRadius, float playerSpeed, float leftBound, float rightBound, float topBound, float bottomBound)
 {
 	Vector2 movement = { 0.0f, 0.0f };
     
@@ -124,6 +141,30 @@ void Player_HandleMovement(Vector2 *playerPosition, float playerRadius, float pl
         
 		playerPosition->x += movement.x;
 		playerPosition->y += movement.y;
+	}
+
+	// Animação e sua logica
+	int inputDir = 0; // 0 - normal, 1 - esquerda, 2 - direita
+	bool leftDown = IsKeyDown(KEY_A);
+	bool rightDown = IsKeyDown(KEY_D);
+	if (rightDown && !leftDown) inputDir = 2;
+	else if (leftDown && !rightDown) inputDir = 1;
+	else inputDir = 0;
+
+	// Mudança de sprite com input
+	if (inputDir != animState) {
+		if (inputDir == 0) {
+			animState = 0;
+			currentPlayerTex = &playerTex_neutral;
+		}
+		else if (inputDir == 1) {
+			animState = 1;
+			currentPlayerTex = &playerTex_left;
+		}
+		else if (inputDir == 2) {
+			animState = 2;
+			currentPlayerTex = &playerTex_right;
+		}
 	}
 
 	if (playerPosition->x - playerRadius < leftBound)
@@ -209,9 +250,22 @@ void Player_UpdateShots(float delta)
 
 void Player_DrawShots(void)
 {
+	float scale = GUI_GetScale() * 0.75f;
+	const float BULLET_ANGLE_OFFSET = 90.0f;
 	for (int i = 0; i < PLAYER_MAX_SHOTS; i++) {
 		if (shoot[i].active) {
-			DrawCircleV(shoot[i].position, shoot[i].radius, shoot[i].color);
+			Texture2D tex = bulletSprite;
+			if (tex.width <= 0 || tex.height <= 0) {
+				DrawCircleV(shoot[i].position, shoot[i].radius, shoot[i].color);
+			} else {
+				Rectangle source = { 0, 0, (float)tex.width, (float)tex.height };
+				if (shoot[i].speed.x < 0.0f) source.width = -(float)tex.width;
+				if (shoot[i].speed.y > 0.0f) source.height = -(float)tex.height;
+				float angle = atan2f(shoot[i].speed.y, shoot[i].speed.x) * RAD2DEG + BULLET_ANGLE_OFFSET;
+				Rectangle dest = { shoot[i].position.x, shoot[i].position.y, fabsf(source.width) * scale, fabsf(source.height) * scale };
+				Vector2 origin = { fabsf(source.width) * scale / 2.0f, fabsf(source.height) * scale / 2.0f };
+				DrawTexturePro(tex, source, dest, origin, angle, shoot[i].color);
+			}
 		}
 	}
 }
