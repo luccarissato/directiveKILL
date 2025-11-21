@@ -36,7 +36,7 @@ int main(void)
     Projectiles_Init(200);
 
     Vector2 playerPosition;
-    float playerRadius = 20.0f;
+    float playerRadius = 15.0f;
     float basePlayerSpeed = 200.0f; 
 
     Player_Init(); 

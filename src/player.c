@@ -57,7 +57,7 @@ void Player_Init(void)
 	reloadTimer = 0.0f;
 	burstCount = 0;
 	isReloading = false;
-	health = 99;
+	health = 3;
 	invulnTimer = 0.0f;
 	playerTex_neutral = LoadTexture("assets/textures/player.png");
 	playerTex_left = LoadTexture("assets/textures/player1.png");
@@ -82,7 +82,7 @@ void Player_Reset(void)
 	reloadTimer = 0.0f;
 	burstCount = 0;
 	isReloading = false;
-	health = 99;
+	health = 3;
 	invulnTimer = 0.0f;
 }
 
@@ -111,7 +111,6 @@ void Player_Unload(void)
 }
 
 void Player_TakeDamage(int amount) {
-	// return;
 	if (amount <= 0) return;
 	if (invulnTimer > 0.0f) return;
 
@@ -143,8 +142,7 @@ void Player_HandleMovement(float delta, Vector2 *playerPosition, float playerRad
 		playerPosition->y += movement.y;
 	}
 
-	// Animação e sua logica
-	int inputDir = 0; // 0 - normal, 1 - esquerda, 2 - direita
+	int inputDir = 0;
 	bool leftDown = IsKeyDown(KEY_A);
 	bool rightDown = IsKeyDown(KEY_D);
 	if (rightDown && !leftDown) inputDir = 2;
