@@ -1,6 +1,6 @@
 # Directive: KILL
 
-Directive: KILL é um fixed-shooter arcade com elementos de bullet-hell fortemente inspirados em jogos retrô como atari e outros jogos de época!
+Directive: KILL é um fixed-shooter arcade com elementos de bullet-hell fortemente inspirados em jogos retrô como atari e outros jogos de época! Você pode conferir uma gameplay do jogo [aqui](https://youtu.be/Xneove7YaZo)
 
 Este repositório contém o código-fonte, assets e um `Makefile` para Linux. O objetivo deste README é permitir que qualquer pessoa que clone o repo consiga compilar e executar o jogo em Linux (e dar orientações rápidas para Windows).
 
