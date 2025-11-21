@@ -124,7 +124,7 @@ int main(void)
             Player_DrawShots();
             Player_Draw(&playerPosition);
 
-            Enemies_Update(playerPosition);
+            Enemies_Update(playerPosition, arcSprite, arc2Sprite);
             Enemies_Draw(enemySprite, scoutSprite, soldierSprite, arcSprite, arc2Sprite, arc3Sprite, arc4Sprite);
 
             Projectiles_SetPlayerPosition(playerPosition);

@@ -48,7 +48,6 @@ static float g_playLeft = 0.0f;
 static float g_playRight = 0.0f;
 
 static void SpawnWave(int count) {
-    if (count > MAX_ENEMIES) count = MAX_ENEMIES;
     int screenW = GetScreenWidth();
     const float rowSpacing = 40.0f;
     const int cols = GRID_COLS;
@@ -211,7 +210,7 @@ void Enemies_UpdateStopY(float newStopY) {
     }
 }
 
-void Enemies_Update(Vector2 playerPos) {
+void Enemies_Update(Vector2 playerPos, Texture2D arcSprite, Texture2D arc2Sprite) {
     float dt = GetFrameTime();
     const float smoothing = 6.0f;
 
@@ -227,7 +226,9 @@ void Enemies_Update(Vector2 playerPos) {
                 float lw = fmaxf(28.0f, enemies[i].radius * 0.9f) * (scale * 0.9f);
                 float lx = enemies[i].position.x - lw * 0.5f;
 
-                float laserStartY = enemies[i].position.y + (enemies[i].radius * scale * 0.5f) + 8.0f;
+                float bossHalfH = (arcSprite.height * scale) / 2.0f;
+                float topY = enemies[i].position.y - bossHalfH;
+                float laserStartY = topY + 6.0f;
 
                 bool playerInBeam = (playerPos.x >= lx && playerPos.x <= lx + lw && playerPos.y >= laserStartY && playerPos.y <= (float)sh);
                 if (playerInBeam) {
@@ -437,6 +438,28 @@ void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldie
             float halfH = (currentSprite.height * scale) / 2.0f;
             float topY = enemies[i].position.y - halfH;
 
+            if (enemies[i].laserTimer > 0.0f) {
+                int sh = GetScreenHeight();
+                float lw = fmaxf(28.0f, enemies[i].radius * 0.9f) * (scale * 0.9f);
+                float lx = enemies[i].position.x - lw * 0.5f;
+
+                float laserStartY = topY + 6.0f;
+                float laserH = (float)sh - laserStartY;
+
+                DrawRectangleRec((Rectangle){ lx, laserStartY, lw, laserH }, (Color){ 255, 220, 220, 200 });
+                float coreW = lw * 0.35f;
+                float coreX = enemies[i].position.x - coreW * 0.5f;
+                DrawRectangleRec((Rectangle){ coreX, laserStartY, coreW, laserH }, (Color){ 255, 180, 180, 255 });
+
+                DrawRectangleRec((Rectangle){ coreX - 2.0f, laserStartY + sh * 0.05f, 2.0f, sh * 0.9f }, (Color){ 255, 120, 120, 80 });
+                DrawRectangleRec((Rectangle){ coreX + coreW, laserStartY + sh * 0.05f, 2.0f, sh * 0.9f }, (Color){ 255, 120, 120, 80 });
+
+                float step = 40.0f * (scale * 0.9f);
+                for (float y = laserStartY + sh * 0.08f; y < sh * 0.95f; y += step) {
+                    DrawCircleV((Vector2){ enemies[i].position.x, y }, 2.5f * (scale * 0.6f), (Color){ 200, 60, 60, 220 });
+                }
+            }
+
             if (arc3Sprite.width > 0 && arc3Sprite.height > 0) {
                 float arc2CenterX = enemies[i].position.x;
                 float arc3CenterX = arc2CenterX - (arc2Sprite.width * scale) / 2.0f - (arc3Sprite.width * scale) / 2.0f;
@@ -460,31 +483,6 @@ void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldie
                 Rectangle dest4 = { arc4CenterX, topY, arc4Sprite.width * scale, arc4Sprite.height * scale };
                 Vector2 origin4 = { (arc4Sprite.width * scale) / 2.0f, arc4Sprite.height * scale };
                 DrawTexturePro(arc4Sprite, source4, dest4, origin4, 0.0f, WHITE);
-            }
-
-
-            if (enemies[i].laserTimer > 0.0f) {
-                int sh = GetScreenHeight();
-                float lw = fmaxf(28.0f, enemies[i].radius * 0.9f) * (scale * 0.9f);
-                float lx = enemies[i].position.x - lw * 0.5f;
-
-                float bossHalfH = (currentSprite.height * scale) / 2.0f;
-                float bossBottomY = enemies[i].position.y + bossHalfH;
-                float laserStartY = bossBottomY + 8.0f;
-                float laserH = (float)sh - laserStartY;
-
-                DrawRectangleRec((Rectangle){ lx, laserStartY, lw, laserH }, (Color){ 255, 220, 220, 200 });
-                float coreW = lw * 0.35f;
-                float coreX = enemies[i].position.x - coreW * 0.5f;
-                DrawRectangleRec((Rectangle){ coreX, laserStartY, coreW, laserH }, (Color){ 255, 180, 180, 255 });
-
-                DrawRectangleRec((Rectangle){ coreX - 2.0f, laserStartY + sh * 0.05f, 2.0f, sh * 0.9f }, (Color){ 255, 120, 120, 80 });
-                DrawRectangleRec((Rectangle){ coreX + coreW, laserStartY + sh * 0.05f, 2.0f, sh * 0.9f }, (Color){ 255, 120, 120, 80 });
-
-                float step = 40.0f * (scale * 0.9f);
-                for (float y = laserStartY + sh * 0.08f; y < sh * 0.95f; y += step) {
-                    DrawCircleV((Vector2){ enemies[i].position.x, y }, 2.5f * (scale * 0.6f), (Color){ 200, 60, 60, 220 });
-                }
             }
         }
 
