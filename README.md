@@ -1,4 +1,4 @@
-# directiveKILL
+# Directive: KILL
 
 Directive: KILL é um fixed-shooter arcade com elementos de bullet-hell fortemente inspirados em jogos retrô como atari e outros jogos de época!
 
