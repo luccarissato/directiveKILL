@@ -37,7 +37,7 @@ typedef struct Enemy {
 
 Enemy enemies[MAX_ENEMIES] = { 0 };
 static bool spawnOccupied[GRID_ROWS][GRID_COLS] = { 0 };
-static float scale = 2.5f;
+static float scale = 4.0f;
 static int g_currentWave = 1;
 static int g_enemiesThisWave = 1;
 static float g_waveTimer = 0.0f;
@@ -137,7 +137,7 @@ static void SpawnWave(int count) {
             int spawnY = -GetRandomValue(16, 48);
             enemies[i].position = (Vector2){ px, (float)spawnY };
             enemies[i].speed = (Vector2){ 0, (float)GetRandomValue(30, 80) / 60.0f };
-            enemies[i].radius = 20.0f;
+            enemies[i].radius = 35.0f;
             enemies[i].active = true;
             enemies[i].stopped = false;
             enemies[i].hp = 3;
@@ -507,7 +507,7 @@ void Enemies_ShootAll(Vector2 playerPos) {
             const float sideOffset = enemies[i].radius * 0.9f;
             const float spawnYOff = 10.0f;
             const float speed = 320.0f;
-            const float bulletRadius = 4.0f;
+            const float bulletRadius = 8.0f;
             const int damage = 1;
             const float life = 6.0f;
             const int bursts = 3;

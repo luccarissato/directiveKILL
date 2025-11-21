@@ -20,6 +20,7 @@ typedef struct Projectile {
     float spinSpeedDeg;
     int visualType; 
     bool flipSprite; 
+	bool flipY; 
 } Projectile;
 
 // inicializa os projeteis com uma quantidade fixa deles
@@ -37,7 +38,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target);
 // update e atualiza os projeteis
 void Projectiles_Update(float dt);
 void Projectiles_Draw(void);
-void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spike2Sprite);
+void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spike2Sprite, Texture2D bulletSprite);
 
 // free na pool de projeteis
 void Projectiles_Free(void);

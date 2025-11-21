@@ -8,6 +8,7 @@
 static Projectile *g_pool = NULL;
 static int g_poolSize = 0;
 static Vector2 g_playerPos = {0,0};
+static const float BULLET_ANGLE_OFFSET = 90.0f; // corrige orientação da sprite
 
 void Projectiles_Init(int maxProjectiles)
 {
@@ -45,6 +46,7 @@ void Projectiles_Spawn(Vector2 pos, Vector2 vel, float radius, int damage, Color
             g_pool[i].willHome = (homingSpeed > 0.0001f);
             g_pool[i].visualType = 0;
             g_pool[i].flipSprite = false;
+            g_pool[i].flipY = (vel.y > 0.0f);
             g_pool[i].willSplit = false;
             g_pool[i].angleDeg = 0.0f;
             g_pool[i].spinSpeedDeg = 0.0f;
@@ -64,14 +66,35 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
         case 0:
         {
             Vector2 vel = (Vector2){ 0.0f, 300.0f };
-            Projectiles_Spawn(pos, vel, 4.0f, 1, RED, 5.0f, 0.0f, 0.0f);
+            if (!g_pool) return;
+            for (int i = 0; i < g_poolSize; i++) {
+                if (!g_pool[i].active) {
+                    g_pool[i].active = true;
+                    g_pool[i].position = pos;
+                        g_pool[i].velocity = vel;
+                        g_pool[i].radius = 8.0f; // Changed from 4.0f to 8.0f
+                    g_pool[i].life = 5.0f;
+                    g_pool[i].age = 0.0f;
+                    g_pool[i].damage = 1;
+                    g_pool[i].color = RED;
+                    g_pool[i].homingSpeed = 0.0f;
+                    g_pool[i].willHome = false;
+                    g_pool[i].visualType = 3;
+                    g_pool[i].flipSprite = false;
+                    g_pool[i].flipY = (vel.y > 0.0f);
+                    g_pool[i].willSplit = false;
+                    g_pool[i].angleDeg = 0.0f;
+                    g_pool[i].spinSpeedDeg = 0.0f;
+                    break;
+                }
+            }
             break;
         }
         case 1:
         {
             const float sideOffset = 12.0f;
-            const float speed = 380.0f;
-            const float radius = 8.0f;
+            const float speed = 420.0f;
+                const float radius = 16.0f; // Changed from 8.0f to 16.0f
             const int damage = 1;
             const float life = 5.0f;
 
@@ -127,7 +150,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
         }
         case 2:
         {
-            const float radius = 10.0f;
+            const float radius = 20.0f; // Changed from 10.0f to 20.0f
             const int damage = 1;
             const float life = 2.0f;
 
@@ -146,7 +169,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                         dir.x = 0.0f; dir.y = preSplitSpeed;
                     }
                     g_pool[i].velocity = dir;
-                    g_pool[i].radius = radius;
+                        g_pool[i].radius = radius;
                     g_pool[i].life = life;
                     g_pool[i].age = 0.0f;
                     g_pool[i].damage = damage;
@@ -215,7 +238,7 @@ void Projectiles_Update(float dt)
                         g_pool[j].active = true;
                         g_pool[j].position = b->position;
                         g_pool[j].velocity = v;
-                        g_pool[j].radius = 4.0f;
+                            g_pool[j].radius = 8.0f; // Changed from 4.0f to 8.0f
                         g_pool[j].life = 5.0f;
                         g_pool[j].age = 0.0f;
                         g_pool[j].damage = 1;
@@ -251,7 +274,7 @@ void Projectiles_Draw(void)
     }
 }
 
-void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spike2Sprite)
+void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spike2Sprite, Texture2D bulletSprite)
 {
     if (!g_pool) return;
     for (int i = 0; i < g_poolSize; i++) {
@@ -260,6 +283,19 @@ void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spike2Sprite)
         
         if (b->visualType == 0) {
             DrawCircleV(b->position, b->radius, b->color);
+        } else if (b->visualType == 3) {
+            if (bulletSprite.width <= 0 || bulletSprite.height <= 0) {
+                DrawCircleV(b->position, b->radius, b->color);
+            } else {
+                float angle = atan2f(b->velocity.y, b->velocity.x) * RAD2DEG + BULLET_ANGLE_OFFSET;
+                float scale = 0.75f; // metade do tamanho anterior (era 1.5)
+                Rectangle source = { 0, 0, (float)bulletSprite.width, (float)bulletSprite.height };
+                if (b->flipSprite) source.width = -(float)bulletSprite.width;
+                if (b->flipY) source.height = -(float)bulletSprite.height;
+                Rectangle dest = { b->position.x, b->position.y, fabsf(source.width) * scale, fabsf(source.height) * scale };
+                Vector2 origin = { fabsf(source.width) * scale / 2.0f, fabsf(source.height) * scale / 2.0f };
+                DrawTexturePro(bulletSprite, source, dest, origin, angle, b->color);
+            }
         } else if (b->visualType == 1) {
             float angle = atan2f(b->velocity.y, b->velocity.x) * RAD2DEG;
             

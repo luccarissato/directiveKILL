@@ -1,3 +1,4 @@
+//funções da interface grafica (GUI)
 #include "gui.h"
 #include "raylib.h"
 #include "../include/game.h"
