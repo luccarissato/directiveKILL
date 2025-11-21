@@ -200,7 +200,7 @@ void Player_HandleShooting(float delta, Vector2 playerPosition)
 					shoot[i].position = (Vector2){ playerPosition.x, playerPosition.y };
 					shoot[i].speed = (Vector2){ 0.0f, -700.0f };
 					shoot[i].lifeSpawn = PLAYER_SHOT_LIFE;
-					shoot[i].radius = 1.5f * GUI_GetScale();
+					shoot[i].radius = 0.75f * GUI_GetScale();
 					shoot[i].color = RAYWHITE;
 					shoot[i].active = true;
 					break;
@@ -250,7 +250,7 @@ void Player_UpdateShots(float delta)
 
 void Player_DrawShots(void)
 {
-	float scale = GUI_GetScale() * 0.75f;
+	float scale = GUI_GetScale() * 0.375f;
 	const float BULLET_ANGLE_OFFSET = 90.0f;
 	for (int i = 0; i < PLAYER_MAX_SHOTS; i++) {
 		if (shoot[i].active) {

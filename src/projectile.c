@@ -71,8 +71,8 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                 if (!g_pool[i].active) {
                     g_pool[i].active = true;
                     g_pool[i].position = pos;
-                    g_pool[i].velocity = vel;
-                    g_pool[i].radius = 4.0f;
+                        g_pool[i].velocity = vel;
+                        g_pool[i].radius = 8.0f; // Changed from 4.0f to 8.0f
                     g_pool[i].life = 5.0f;
                     g_pool[i].age = 0.0f;
                     g_pool[i].damage = 1;
@@ -93,8 +93,8 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
         case 1:
         {
             const float sideOffset = 12.0f;
-            const float speed = 380.0f;
-            const float radius = 8.0f;
+            const float speed = 420.0f;
+                const float radius = 16.0f; // Changed from 8.0f to 16.0f
             const int damage = 1;
             const float life = 5.0f;
 
@@ -150,7 +150,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
         }
         case 2:
         {
-            const float radius = 10.0f;
+            const float radius = 20.0f; // Changed from 10.0f to 20.0f
             const int damage = 1;
             const float life = 2.0f;
 
@@ -169,7 +169,7 @@ void Projectiles_Type(int enemyType, Vector2 pos, Vector2 target)
                         dir.x = 0.0f; dir.y = preSplitSpeed;
                     }
                     g_pool[i].velocity = dir;
-                    g_pool[i].radius = radius;
+                        g_pool[i].radius = radius;
                     g_pool[i].life = life;
                     g_pool[i].age = 0.0f;
                     g_pool[i].damage = damage;
@@ -238,7 +238,7 @@ void Projectiles_Update(float dt)
                         g_pool[j].active = true;
                         g_pool[j].position = b->position;
                         g_pool[j].velocity = v;
-                        g_pool[j].radius = 4.0f;
+                            g_pool[j].radius = 8.0f; // Changed from 4.0f to 8.0f
                         g_pool[j].life = 5.0f;
                         g_pool[j].age = 0.0f;
                         g_pool[j].damage = 1;
