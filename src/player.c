@@ -12,14 +12,11 @@
 #define BURST_INTERVAL 0.1f
 #define RELOAD_TIME 0.6f
 
-#define PLAYER_SHOT_LIFE 5200
-
 typedef struct Shoot {
 	Vector2 speed;
 	bool active;
 	Color color;
 	Vector2 position;
-	int lifeSpawn;
 	float radius;
 } Shoot;
 
@@ -30,8 +27,6 @@ static int burstCount = 0;
 static bool isReloading = false;
 static int health = 1;
 static float invulnTimer = 0.0f;
-
-static Texture2D playerSprite;
 static Texture2D playerTex_neutral;
 static Texture2D playerTex_left;
 static Texture2D playerTex_right;
@@ -50,7 +45,6 @@ void Player_Init(void)
 		shoot[i].position = (Vector2){0,0};
 		shoot[i].speed = (Vector2){0,0};
 		shoot[i].color = RAYWHITE;
-		shoot[i].lifeSpawn = 0;
 		shoot[i].radius = 0.0f;
 	}
 	burstTimer = 0.0f;
@@ -74,7 +68,6 @@ void Player_Reset(void)
 		shoot[i].active = false;
 		shoot[i].position = (Vector2){0,0};
 		shoot[i].speed = (Vector2){0,0};
-		shoot[i].lifeSpawn = 0;
 		shoot[i].radius = 0.0f;
 		shoot[i].color = RAYWHITE;
 	}
@@ -197,7 +190,6 @@ void Player_HandleShooting(float delta, Vector2 playerPosition)
 				if (!shoot[i].active) {
 					shoot[i].position = (Vector2){ playerPosition.x, playerPosition.y };
 					shoot[i].speed = (Vector2){ 0.0f, -700.0f };
-					shoot[i].lifeSpawn = PLAYER_SHOT_LIFE;
 					shoot[i].radius = 0.75f * GUI_GetScale();
 					shoot[i].color = RAYWHITE;
 					shoot[i].active = true;
@@ -232,14 +224,13 @@ void Player_UpdateShots(float delta)
 	for (int i = 0; i < PLAYER_MAX_SHOTS; i++) {
 		if (shoot[i].active) {
 			shoot[i].position.y += shoot[i].speed.y * delta;
-			shoot[i].lifeSpawn--;
 
 			if (Enemies_CheckHit(shoot[i].position, shoot[i].radius)) {
 				shoot[i].active = false;
 				continue;
 			}
 
-			if (shoot[i].lifeSpawn <= 0 || shoot[i].position.y < 0) {
+			if (shoot[i].position.y < 0) {
 				shoot[i].active = false;
 			}
 		}

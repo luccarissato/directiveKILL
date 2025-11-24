@@ -98,44 +98,6 @@ void Game_SaveScore(const char *name, int score) {
     free_scores(head);
 }
 
-void Game_DrawScores(void) {
-    Game_DrawScoresAt(120);
-}
-
-void Game_DrawScoresAt(int startY) {
-    const char *path = "score.txt";
-    ScoreNode *head = load_scores_from_file(path);
-    int count = 0;
-    for (ScoreNode *t = head; t; t = t->next) count++;
-    if (count == 0) {
-        DrawText("No scores saved.", 100, startY, 20, RAYWHITE);
-        free_scores(head);
-        return;
-    }
-    ScoreNode **arr = (ScoreNode**)malloc(sizeof(ScoreNode*) * count);
-    int i = 0;
-    for (ScoreNode *t = head; t; t = t->next) arr[i++] = t;
-
-    // bubble sort descendente
-    for (int a = 0; a < count - 1; a++) {
-        for (int b = 0; b < count - 1 - a; b++) {
-            if (arr[b]->score < arr[b+1]->score) {
-                ScoreNode *tmp = arr[b]; arr[b] = arr[b+1]; arr[b+1] = tmp;
-            }
-        }
-    }
-
-    int y = startY;
-    for (int k = 0; k < count; k++) {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%d. %s - %d", k+1, arr[k]->name, arr[k]->score);
-        DrawText(buf, 100, y, 20, RAYWHITE);
-        y += 28;
-    }
-    free(arr);
-    free_scores(head);
-}
-
 void Game_DrawScoresAtScaled(int startY, int fontSize, int lineSpacing) {
     const char *path = "score.txt";
     ScoreNode *head = load_scores_from_file(path);

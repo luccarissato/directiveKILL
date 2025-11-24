@@ -40,9 +40,6 @@ void GUI_GetPlayArea(Rectangle *outArea);
 // Retorna o dest rectangle onde o overlay GUI é desenhado (útil para alinhar elementos)
 void GUI_GetOverlayDest(Rectangle *outDest);
 
-// Desenha um overlay de depuração semi-transparente mostrando as barras esquerda/direita e a área de jogo
-void GUI_DrawDebugOverlay(void);
-
 // Desenha apenas o background da GUI (por trás dos objetos de jogo)
 void GUI_DrawBackground(void);
 

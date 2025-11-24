@@ -17,9 +17,6 @@ static Texture2D scoreMenu;
 static Texture2D gameOverImg;
 static Texture2D guiBackground;
 static Texture2D guiOverlay;
-static const int optionX = 360;
-static const int optionStartY = 210;
-static const int optionSpacing = 60; 
 
 void GUI_Init(void) {
     // Carrega texturas do diretório correto (`assets/GUI`)
@@ -448,33 +445,4 @@ void GUI_DrawOverlay(int playerLives) {
     int textW = MeasureText(scoreBuf, fontSize);
     float nudge = 4.0f * GUI_GetScale();
     DrawText(scoreBuf, (int)(rightBarCenterX - textW / 2.0f - nudge), (int)scoreY, fontSize, RAYWHITE);
-}
-
-// Desenha retângulos semi-transparente para depuração e alinhamento do background/overlay/área de jogo
-void GUI_DrawDebugOverlay(void) {
-    Rectangle overlay; GUI_GetOverlayDest(&overlay);
-    const float barFrac = 0.12f;
-    const float adjFrac = barFrac * 2.0f;
-    float baseShift = 4.0f * GUI_GetScale();
-    float extra = 5.0f * GUI_GetScale();
-    float leftShift = baseShift * 2.0f + extra;
-    float rightShift = baseShift * 3.0f + extra;
-    Rectangle leftBar = { overlay.x + leftShift, overlay.y, overlay.width * adjFrac, overlay.height };
-    Rectangle rightBar = { overlay.x + overlay.width * (1.0f - adjFrac) - rightShift, overlay.y, overlay.width * adjFrac, overlay.height };
-    Rectangle playArea; GUI_GetPlayArea(&playArea);
-
-    // preenchimentos semi-transparente
-    Color leftFill = (Color){ 255, 0, 0, 80 };
-    Color rightFill = (Color){ 0, 0, 255, 80 };
-    Color playFill = (Color){ 0, 255, 0, 60 };
-
-    DrawRectangleRec(leftBar, leftFill);
-    DrawRectangleRec(rightBar, rightFill);
-    DrawRectangleRec(playArea, playFill);
-
-    // outlines
-    Color outline = (Color){ 255, 255, 255, 180 };
-    DrawRectangleLinesEx(leftBar, 2.0f, outline);
-    DrawRectangleLinesEx(rightBar, 2.0f, outline);
-    DrawRectangleLinesEx(playArea, 2.0f, outline);
 }

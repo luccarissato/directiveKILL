@@ -14,13 +14,10 @@ void Enemies_SetPlayArea(float leftX, float rightX);
 void Enemies_UpdateStopY(float newStopY);
 
 // atualiza a posição dos inimigos. Passa a posição do jogador para auxiliar com ataques
-void Enemies_Update(Vector2 playerPos, Texture2D arcSprite, Texture2D arc2Sprite);
+void Enemies_Update(Vector2 playerPos, Texture2D arcSprite);
 
 // desenha os inimigos na tela
 void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldierSprite, Texture2D arcSprite, Texture2D arc2Sprite, Texture2D arc3Sprite, Texture2D arc4Sprite);
-
-// obtém a posição do primeiro inimigo ativo, retorna true se for bem-sucedido
-bool Enemies_GetFirstActivePosition(Vector2 *outPos, int *outIndex);
 
 // todos os inimigos atiram com o seu respectivo padrão
 void Enemies_ShootAll(Vector2 playerPos);

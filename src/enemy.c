@@ -11,13 +11,10 @@
 #define GRID_ROWS 2
 
 typedef struct Enemy {
-    Vector2 speed;
 	bool active;
 	Color color;
 	Vector2 position;
-	int lifeSpawn;
     int hp;
-    int maxHp;
     float radius;
     float targetY; // onde os inimigos devem parar na tela
     bool stopped;
@@ -57,7 +54,6 @@ static void SpawnWave(int count) {
             enemies[i].active = false;
             enemies[i].stopped = false;
             enemies[i].hp = 0;
-            enemies[i].maxHp = 0;
             enemies[i].spawnRow = -1;
             enemies[i].spawnCol = -1;
             enemies[i].isBoss = false;
@@ -70,12 +66,10 @@ static void SpawnWave(int count) {
         float centerX = (float)screenW * 0.5f;
         int spawnY = -GetRandomValue(80, 120);
         enemies[0].position = (Vector2){ centerX, (float)spawnY };
-        enemies[0].speed = (Vector2){ 0, (float)GetRandomValue(20, 60) / 60.0f };
         enemies[0].radius = 48.0f;
         enemies[0].active = true;
         enemies[0].stopped = false;
         enemies[0].hp = 60;
-        enemies[0].maxHp = 60;
         enemies[0].type = 0;
         enemies[0].targetY = g_stopY + rowSpacing;
         enemies[0].color = WHITE;
@@ -136,7 +130,6 @@ static void SpawnWave(int count) {
             float px = playLeft + cellX * (col + 1);
             int spawnY = -GetRandomValue(16, 48);
             enemies[i].position = (Vector2){ px, (float)spawnY };
-            enemies[i].speed = (Vector2){ 0, (float)GetRandomValue(30, 80) / 60.0f };
             enemies[i].radius = 35.0f;
             enemies[i].active = true;
             enemies[i].stopped = false;
@@ -210,7 +203,7 @@ void Enemies_UpdateStopY(float newStopY) {
     }
 }
 
-void Enemies_Update(Vector2 playerPos, Texture2D arcSprite, Texture2D arc2Sprite) {
+void Enemies_Update(Vector2 playerPos, Texture2D arcSprite) {
     float dt = GetFrameTime();
     const float smoothing = 6.0f;
 
@@ -261,7 +254,6 @@ void Enemies_Update(Vector2 playerPos, Texture2D arcSprite, Texture2D arc2Sprite
             if (fabsf(enemies[i].targetY - enemies[i].position.y) <= 0.5f) {
                 enemies[i].position.y = enemies[i].targetY;
                 enemies[i].stopped = true;
-                enemies[i].speed.y = 0.0f;
                 enemies[i].motionTimer = 0.0f;
             }
         } else {
@@ -488,16 +480,6 @@ void Enemies_Draw(Texture2D enemySprite, Texture2D scoutSprite, Texture2D soldie
 
         DrawTexturePro(currentSprite, source, dest, origin, 0.0f, tint);
     }
-}
-
-bool Enemies_GetFirstActivePosition(Vector2 *outPos, int *outIndex) {
-    for (int i = 0; i < MAX_ENEMIES; i++) {
-        if (!enemies[i].active) continue;
-        if (outPos) *outPos = enemies[i].position;
-        if (outIndex) *outIndex = i;
-        return true;
-    }
-    return false;
 }
 
 void Enemies_ShootAll(Vector2 playerPos) {

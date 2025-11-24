@@ -264,16 +264,6 @@ void Projectiles_Update(float dt)
     }
 }
 
-void Projectiles_Draw(void)
-{
-    if (!g_pool) return;
-    for (int i = 0; i < g_poolSize; i++) {
-        Projectile *b = &g_pool[i];
-        if (!b->active) continue;
-        DrawCircleV(b->position, b->radius, b->color);
-    }
-}
-
 void Projectiles_DrawWithSprite(Texture2D spikeSprite, Texture2D spike2Sprite, Texture2D bulletSprite)
 {
     if (!g_pool) return;
