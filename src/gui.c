@@ -69,14 +69,12 @@ int GUI_GetScaledFontSize(int baseSize) {
 GuiState Gui_Update(GuiState currentState) {
     if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) {
         if (currentState == GUI_STATE_MENU) menuSelection = clampSelection(menuSelection - 1, 3);
-        else if (currentState == GUI_STATE_PAUSE) menuSelection = clampSelection(menuSelection - 1, 1);
         else if (currentState == GUI_STATE_GAMEOVER) menuSelection = clampSelection(menuSelection - 1, 2);
         else if (currentState == GUI_STATE_SCORES) menuSelection = clampSelection(menuSelection - 1, 1);
     }
     if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN)) {
 
         if (currentState == GUI_STATE_MENU) menuSelection = clampSelection(menuSelection + 1, 3);
-        else if (currentState == GUI_STATE_PAUSE) menuSelection = clampSelection(menuSelection + 1, 1);
         else if (currentState == GUI_STATE_GAMEOVER) menuSelection = clampSelection(menuSelection + 1, 2);
         else if (currentState == GUI_STATE_SCORES) menuSelection = clampSelection(menuSelection + 1, 1);
     }
@@ -87,9 +85,7 @@ GuiState Gui_Update(GuiState currentState) {
             if (menuSelection == 1) return GUI_STATE_SCORES;   
             if (menuSelection == 2) return GUI_STATE_EXIT;     
         }
-        else if (currentState == GUI_STATE_PAUSE) {
-            return GUI_STATE_GAME;
-        }
+        
         else if (currentState == GUI_STATE_GAMEOVER) {
             if (menuSelection == 0) return GUI_STATE_MENU;
             if (menuSelection == 1) return GUI_STATE_SAVE_SCORE;
@@ -175,21 +171,6 @@ void Gui_Draw(GuiState state, int playerLives) {
             int score = Game_GetScore();
             DrawText(TextFormat("%d", score), (int)rightBarX, (int)scoreY, fontSize, RAYWHITE);
 
-            break;
-        }
-
-        case GUI_STATE_PAUSE: {
-            int sw = GetScreenWidth();
-            int sh = GetScreenHeight();
-            int titleSize = GUI_GetScaledFontSize(40);
-            int optionSize = GUI_GetScaledFontSize(20);
-            const char *pauseText = "PAUSED";
-            int pauseWidth = MeasureText(pauseText, titleSize);
-            DrawText(pauseText, sw/2 - pauseWidth/2, sh/2 - 100, titleSize, RAYWHITE);
-            Color resumeCol = (menuSelection == 0) ? YELLOW : RAYWHITE;
-            const char *resumeText = "Resume";
-            int resumeWidth = MeasureText(resumeText, optionSize);
-            DrawText(resumeText, sw/2 - resumeWidth/2, sh/2 - 20, optionSize, resumeCol);
             break;
         }
 
